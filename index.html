@@ -1,190 +1,187 @@
-<!-- Game embedded from Internet Archive (https://archive.org) Original
-arcade game and emulator are hosted by the Internet Archive. This page
-is only a minimal fullscreen wrapper around their embed player. Original
-embed source: https://archive.org/embed/arcade_acchi Game: Janken Game
-Acchi Muite Hoi (じゃんけん＆あっち向いてホイ) Developer: Data East © Data East Corporation.
-All rights reserved. Preserved and emulated by the Internet Archive. This
-is a non-commercial preservation for archival purposes. All rights to the
-game belong to their respective owners. -->
 <!DOCTYPE html>
 <html lang="en">
-  
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-      Arcade - Acchi (Data East)
-    </title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; } body { background:
-      #000; display: flex; flex-direction: column; align-items: center; justify-content:
-      center; height: 100vh; overflow: hidden; font-family: Arial, sans-serif;
-      } .header { color: #fff; text-align: center; margin-bottom: 10px; font-size:
-      14px; } .header h1 { font-size: 18px; margin-bottom: 5px; } .header p {
-      font-size: 12px; color: #aaa; } .wrapper { position: relative; width: 640px;
-      height: 480px; } iframe { display: block; width: 640px; height: 480px;
-      border: none; image-rendering: pixelated; transform-origin: top left; position:
-      absolute; top: 0; left: 0; } .controls { position: absolute; bottom: 8px;
-      right: 8px; display: flex; gap: 8px; z-index: 10; } button { background:
-      rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color:
-      #fff; padding: 4px 8px; cursor: pointer; font-size: 16px; line-height:
-      1; border-radius: 4px; transition: background 0.15s; } button:hover { background:
-      rgba(255,255,255,0.28); } .sound-icon { font-size: 14px; } .footer { color:
-      #666; text-align: center; margin-top: 10px; font-size: 11px; max-width:
-      640px; } .footer a { color: #0969da; text-decoration: none; } .footer a:hover
-      { text-decoration: underline; } :fullscreen, :-webkit-full-screen { background:
-      #000; }
-    </style>
-  </head>
-  
-  <body>
-    <div class="header">
-      <h1>
-        Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ)
-      </h1>
-      <p>
-        © Data East Corporation | Preserved by Internet Archive
-      </p>
-    </div>
-    <div class="wrapper" id="wrapper">
-      <iframe
-  id="game"
-  src="https://archive.org/embed/arcade_acchi"
-  allow="autoplay; fullscreen"
-  allowfullscreen>
-</iframe>
-      <div class="controls">
-        <button id="sound-btn" class="sound-btn" title="Toggle Sound">
-          <span class="sound-icon">
-            🔊
-          </span>
-        </button>
-        <button id="fs-btn" title="Fullscreen">
-          ⛶
-        </button>
-      </div>
-    </div>
-    <div class="footer">
-      <p>
-        <strong>
-          Janken Game Acchi Muite Hoi
-        </strong>
-        (じゃんけん＆あっち向いてホイ) is an arcade game originally developed by
-        <strong>
-          Data East
-        </strong>
-        .
-      </p>
-      <p>
-        This is a non-commercial preservation for archival and historical purposes.
-        For official releases, visit
-        <a href="https://archive.org/details/arcade_acchi" target="_blank">
-          archive.org
-        </a>
-      </p>
-      <p>
-        Emulation provided by MAME through the Internet Archive.
-      </p>
-    </div>
-    <!-- Audio elements for sound effects -->
-    <audio id="bgm" loop>
-      <source src="assets/music.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="sfx-select">
-      <source src="assets/select.wav" type="audio/wav">
-    </audio>
-    <audio id="sfx-hit">
-      <source src="assets/hit.wav" type="audio/wav">
-    </audio>
-    <script>
-      const btn = document.getElementById('fs-btn');
-      const soundBtn = document.getElementById('sound-btn');
-      const wrapper = document.getElementById('wrapper');
-      const iframe = document.getElementById('game');
-      const bgm = document.getElementById('bgm');
-      const sfxSelect = document.getElementById('sfx-select');
-      const sfxHit = document.getElementById('sfx-hit');
-      const W = 640,
-      H = 480;
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcade - Acchi (Data East)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-      let soundEnabled = true;
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
 
-      function applyScale(sw, sh) {
-        const scale = Math.min(sw / W, sh / H);
-        const offsetX = (sw - W * scale) / 2;
-        const offsetY = (sh - H * scale) / 2;
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-        wrapper.style.width = sw + 'px';
-        wrapper.style.height = sh + 'px';
-        wrapper.style.display = 'flex';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.justifyContent = 'center';
-        iframe.style.transform = `translate($ {
-          offsetX
-        }
-        px, $ {
-          offsetY
-        }
-        px) scale($ {
-          scale
-        })`;
-        iframe.style.transformOrigin = 'top left';
+    .header {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .wrapper {
+      position: relative;
+      width: 640px;
+      height: 480px;
+    }
+
+    iframe {
+      display: block;
+      width: 640px;
+      height: 480px;
+      border: none;
+      image-rendering: pixelated;
+      transform-origin: top left;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    button {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: rgba(255,255,255,0.28); }
+
+    .footer {
+      color: #666;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 11px;
+      max-width: 640px;
+    }
+
+    .footer a {
+      color: #0969da;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    :fullscreen,
+    :-webkit-full-screen {
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ)</h1>
+    <p>© Data East Corporation | Preserved by Internet Archive</p>
+  </div>
+
+  <div class="wrapper" id="wrapper">
+    <iframe
+      id="game"
+      src="https://archive.org/embed/arcade_acchi"
+      allow="autoplay; fullscreen"
+      allowfullscreen>
+    </iframe>
+    <div class="controls">
+      <button id="fs-btn" title="Fullscreen">⛶</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>Janken Game Acchi Muite Hoi</strong> (じゃんけん＆あっち向いてホイ) is an arcade game originally developed by <strong>Data East</strong>.</p>
+    <p>This is a non-commercial preservation for archival and historical purposes. For official releases, visit <a href="https://archive.org/details/arcade_acchi" target="_blank">archive.org</a></p>
+    <p>Emulation provided by MAME through the Internet Archive.</p>
+  </div>
+
+  <script>
+    const btn = document.getElementById('fs-btn');
+    const wrapper = document.getElementById('wrapper');
+    const iframe = document.getElementById('game');
+    const W = 640, H = 480;
+
+    function applyScale(sw, sh) {
+      const scale = Math.min(sw / W, sh / H);
+      const offsetX = (sw - W * scale) / 2;
+      const offsetY = (sh - H * scale) / 2;
+
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.width = sw + 'px';
+      wrapper.style.height = sh + 'px';
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.justifyContent = 'center';
+
+      iframe.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      iframe.style.transformOrigin = 'top left';
+    }
+
+    function resetScale() {
+      wrapper.style.position = '';
+      wrapper.style.top = '';
+      wrapper.style.left = '';
+      wrapper.style.width = '640px';
+      wrapper.style.height = '480px';
+      wrapper.style.display = '';
+      wrapper.style.alignItems = '';
+      wrapper.style.justifyContent = '';
+      iframe.style.transform = '';
+    }
+
+    btn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen();
+      } else {
+        document.exitFullscreen();
       }
+    });
 
-      function resetScale() {
-        wrapper.style.position = '';
-        wrapper.style.top = '';
-        wrapper.style.left = '';
-        wrapper.style.width = '640px';
-        wrapper.style.height = '480px';
-        wrapper.style.display = '';
-        wrapper.style.alignItems = '';
-        wrapper.style.justifyContent = '';
-        iframe.style.transform = '';
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) {
+        btn.textContent = '✕';
+        applyScale(window.screen.width, window.screen.height);
+      } else {
+        btn.textContent = '⛶';
+        resetScale();
       }
+    });
 
-      // Fullscreen toggle
-      btn.addEventListener('click', () = >{
-        if (!document.fullscreenElement) {
-          wrapper.requestFullscreen();
-        } else {
-          document.exitFullscreen();
-        }
-      });
-
-      // Sound toggle
-      soundBtn.addEventListener('click', async() = >{
-        try {
-          await bgm.play();
-          soundBtn.textContent = '🔊';
-        } catch(err) {
-          console.error('Audio failed:', err);
-          alert('Audio was blocked or the file is missing.');
-        }
-      });
-
-      // Fullscreen change event
-      document.addEventListener('fullscreenchange', () = >{
-        if (document.fullscreenElement) {
-          btn.textContent = '✕';
-          applyScale(window.screen.width, window.screen.height);
-        } else {
-          btn.textContent = '⛶';
-          resetScale();
-        }
-      });
-
-      window.addEventListener('resize', () = >{
-        if (document.fullscreenElement) {
-          applyScale(window.innerWidth, window.innerHeight);
-        }
-      });
-
-      // Initialize sound state
-      soundBtn.style.opacity = soundEnabled ? '1': '0.5';
-    </script>
-  </body>
-
+    window.addEventListener('resize', () => {
+      if (document.fullscreenElement) {
+        applyScale(window.innerWidth, window.innerHeight);
+      }
+    });
+  </script>
+</body>
 </html>
