@@ -1,3 +1,15 @@
+<!--
+Game embedded from Internet Archive (https://archive.org)
+
+Original arcade game and emulator are hosted by the Internet Archive.
+This page is only a minimal fullscreen wrapper around their embed player.
+
+Original embed source:
+https://archive.org/embed/arcade_acchi
+
+All rights to the game belong to their respective owners.
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,12 +22,10 @@
     body {
       background: #000;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
       overflow: hidden;
-      font-family: Arial, sans-serif;
     }
 
     .grid-bg {
@@ -32,33 +42,11 @@
       height: 100%;
     }
 
-    .header, .wrapper, .footer, .back-link, .controls {
-      position: relative;
-      z-index: 1;
-    }
-
-    .header {
-      color: #fff;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    .header h1 {
-      font-size: 18px;
-      margin-bottom: 5px;
-    }
-
-    .header p {
-      font-size: 12px;
-      color: #aaa;
-    }
-
     .back-link {
       position: absolute;
       top: 10px;
       left: 14px;
-      color: #0969da;
+      color: #22c55e;
       text-decoration: none;
       font-size: 13px;
       font-family: Arial, sans-serif;
@@ -71,39 +59,7 @@
       position: relative;
       width: 640px;
       height: 480px;
-    }
-
-    /* Click-to-play overlay — satisfies browser autoplay policy */
-    .play-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 15;
-      background: rgba(0, 0, 0, 0.82);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    }
-
-    .play-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .play-overlay svg {
-      width: 72px;
-      height: 72px;
-      fill: #fff;
-      filter: drop-shadow(0 0 12px rgba(255,255,255,0.35));
-      margin-bottom: 14px;
-    }
-
-    .play-overlay span {
-      color: #fff;
-      font-size: 16px;
-      letter-spacing: 0.5px;
+      z-index: 1;
     }
 
     iframe {
@@ -118,16 +74,10 @@
       left: 0;
     }
 
-    .controls {
+    #fs-btn {
       position: absolute;
       bottom: 8px;
       right: 8px;
-      display: flex;
-      gap: 8px;
-      z-index: 10;
-    }
-
-    button {
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.25);
       color: #fff;
@@ -137,26 +87,10 @@
       line-height: 1;
       border-radius: 4px;
       transition: background 0.15s;
+      z-index: 10;
     }
 
-    button:hover { background: rgba(255,255,255,0.28); }
-
-    .footer {
-      color: #666;
-      text-align: center;
-      margin-top: 10px;
-      font-size: 11px;
-      max-width: 640px;
-    }
-
-    .footer a {
-      color: #0969da;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
+    #fs-btn:hover { background: rgba(255,255,255,0.28); }
 
     :fullscreen,
     :-webkit-full-screen {
@@ -169,34 +103,9 @@
 
   <a class="back-link" href="../">&#8592; Back to Hub</a>
 
-  <div class="header">
-    <h1>Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ)</h1>
-    <p>&copy; Data East Corporation | Preserved by Internet Archive</p>
-  </div>
-
   <div class="wrapper" id="wrapper">
-    <!-- Overlay forces a user gesture before the iframe loads, which lets the browser allow audio -->
-    <div class="play-overlay" id="play-overlay">
-      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      <span>Click to Play</span>
-    </div>
-
-    <!-- iframe src is empty until the user clicks; this is the key audio fix -->
-    <iframe
-      id="game"
-      src="about:blank"
-      allow="autoplay; fullscreen; encrypted-media"
-      allowfullscreen>
-    </iframe>
-    <div class="controls">
-      <button id="fs-btn" title="Fullscreen">&#x26F6;</button>
-    </div>
-  </div>
-
-  <div class="footer">
-    <p><strong>Janken Game Acchi Muite Hoi</strong> (じゃんけん＆あっち向いてホイ) is an arcade game originally developed by <strong>Data East</strong>.</p>
-    <p>This is a non-commercial preservation for archival and historical purposes. For official releases, visit <a href="https://archive.org/details/arcade_acchi" target="_blank">archive.org</a></p>
-    <p>Emulation provided by MAME through the Internet Archive.</p>
+    <iframe id="game" src="https://archive.org/embed/arcade_acchi" allowfullscreen></iframe>
+    <button id="fs-btn">&#x26F6;</button>
   </div>
 
   <script>
@@ -278,26 +187,15 @@
       draw();
     })();
 
-    const overlay = document.getElementById('play-overlay');
-    const iframe  = document.getElementById('game');
-    const btn     = document.getElementById('fs-btn');
-    const wrapper = document.getElementById('wrapper');
-    const GAME_URL = 'https://archive.org/embed/arcade_acchi';
-    const W = 640, H = 480;
-
-    // Load the iframe only after a real user click — this user gesture
-    // satisfies the browser autoplay policy so audio works immediately.
-    overlay.addEventListener('click', function () {
-      iframe.src = GAME_URL;
-      overlay.classList.add('hidden');
-      iframe.focus();
-    });
+    var btn     = document.getElementById('fs-btn');
+    var wrapper = document.getElementById('wrapper');
+    var iframe  = document.getElementById('game');
+    var W = 640, H = 480;
 
     function applyScale(sw, sh) {
-      const scale = Math.min(sw / W, sh / H);
-      const offsetX = (sw - W * scale) / 2;
-      const offsetY = (sh - H * scale) / 2;
-
+      var scale = Math.min(sw / W, sh / H);
+      var offsetX = (sw - W * scale) / 2;
+      var offsetY = (sh - H * scale) / 2;
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
       wrapper.style.left = '0';
@@ -306,7 +204,6 @@
       wrapper.style.display = 'flex';
       wrapper.style.alignItems = 'center';
       wrapper.style.justifyContent = 'center';
-
       iframe.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + ')';
       iframe.style.transformOrigin = 'top left';
     }
