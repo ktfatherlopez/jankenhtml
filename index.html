@@ -3,184 +3,464 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arcade - Acchi (Data East)</title>
+  <title>Janken Lopez Hub</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background: #000;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .grid-bg canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hub-header, .games-grid, .hub-footer, .mute-btn {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hub-header {
+      text-align: center;
+      padding: 48px 20px 32px;
+      border-bottom: 1px solid #1a3a1a;
+    }
+
+    .hub-header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .hub-header h1 span {
+      background: linear-gradient(135deg, #22c55e, #86efac);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hub-header p {
+      color: #8a8a8a;
+      font-size: 15px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* Mute toggle */
+    .mute-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 50;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #22c55e;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    .header {
-      color: #fff;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    .header h1 {
-      font-size: 18px;
-      margin-bottom: 5px;
-    }
-
-    .header p {
-      font-size: 12px;
-      color: #aaa;
-    }
-
-    .wrapper {
-      position: relative;
-      width: 640px;
-      height: 480px;
-    }
-
-    iframe {
-      display: block;
-      width: 640px;
-      height: 480px;
-      border: none;
-      image-rendering: pixelated;
-      transform-origin: top left;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .controls {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      display: flex;
-      gap: 8px;
-      z-index: 10;
-    }
-
-    button {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: #fff;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      border-radius: 4px;
       transition: background 0.15s;
     }
+    .mute-btn:hover { background: rgba(34, 197, 94, 0.3); }
 
-    button:hover { background: rgba(255,255,255,0.28); }
-
-    .footer {
-      color: #666;
-      text-align: center;
-      margin-top: 10px;
-      font-size: 11px;
-      max-width: 640px;
+    .games-grid {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
     }
 
-    .footer a {
-      color: #0969da;
+    .game-card {
+      background: #0a0a0a;
+      border: 1px solid #1a3a1a;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .game-card:hover {
+      border-color: #22c55e;
+      transform: translateY(-3px);
+    }
+
+    .game-card .thumb {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      user-select: none;
+    }
+
+    .game-card .info {
+      padding: 16px;
+    }
+
+    .game-card .info h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .game-card .info .subtitle {
+      font-size: 12px;
+      color: #8a8a8a;
+      margin-bottom: 10px;
+    }
+
+    .game-card .info .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .hub-footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: #555;
+      font-size: 12px;
+      border-top: 1px solid #1a3a1a;
+    }
+
+    .hub-footer a {
+      color: #22c55e;
       text-decoration: none;
     }
 
-    .footer a:hover {
-      text-decoration: underline;
+    .hub-footer a:hover { text-decoration: underline; }
+
+    /* ── Welcome popup ── */
+    .popup-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.35s;
     }
 
-    :fullscreen,
-    :-webkit-full-screen {
-      background: #000;
+    .popup-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .popup-box {
+      background: #0a0a0a;
+      border: 1px solid #22c55e;
+      border-radius: 12px;
+      max-width: 520px;
+      width: 90%;
+      padding: 32px 28px 24px;
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);
+      text-align: left;
+    }
+
+    .popup-box h2 {
+      font-size: 22px;
+      color: #22c55e;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .popup-box h3 {
+      font-size: 14px;
+      color: #86efac;
+      margin: 14px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .popup-box ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .popup-box ul li {
+      font-size: 13px;
+      color: #ccc;
+      padding: 4px 0 4px 16px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .popup-box ul li::before {
+      content: '\25B8';
+      color: #22c55e;
+      position: absolute;
+      left: 0;
+    }
+
+    .popup-box .popup-btn {
+      display: block;
+      margin: 22px auto 0;
+      background: #22c55e;
+      color: #000;
+      border: none;
+      padding: 10px 32px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .popup-box .popup-btn:hover {
+      background: #16a34a;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ)</h1>
-    <p>© Data East Corporation | Preserved by Internet Archive</p>
-  </div>
+  <div class="grid-bg"><canvas id="grid-canvas"></canvas></div>
 
-  <div class="wrapper" id="wrapper">
-    <iframe
-      id="game"
-      src="https://archive.org/embed/arcade_acchi"
-      allow="autoplay; fullscreen"
-      allowfullscreen>
-    </iframe>
-    <div class="controls">
-      <button id="fs-btn" title="Fullscreen">⛶</button>
+  <!-- Welcome popup -->
+  <div class="popup-overlay" id="popup-overlay">
+    <div class="popup-box">
+      <h2>Welcome to Janken Lopez Hub</h2>
+
+      <h3>What Is This?</h3>
+      <ul>
+        <li>A free, non-commercial arcade game hub running entirely in your browser.</li>
+        <li>Games are streamed from the Internet Archive — nothing is downloaded to your device.</li>
+      </ul>
+
+      <h3>Rules &amp; Guidelines</h3>
+      <ul>
+        <li>All games are provided as-is for preservation and entertainment purposes only.</li>
+        <li>Do not redistribute or claim ownership of any game hosted here.</li>
+        <li>Some games may contain flashing lights — play at your own discretion.</li>
+      </ul>
+
+      <h3>Important Notes</h3>
+      <ul>
+        <li>None of these games are owned by this hub. All rights belong to their original creators.</li>
+        <li>No personal data is collected — there are no accounts, ads, or tracking.</li>
+        <li>Audio will play once you enter. Use the mute button (bottom-right) at any time.</li>
+        <li>Games run via MAME emulation and may require a keyboard to play.</li>
+      </ul>
+
+      <button class="popup-btn" id="popup-accept">Got It — Let Me In</button>
     </div>
   </div>
 
-  <div class="footer">
-    <p><strong>Janken Game Acchi Muite Hoi</strong> (じゃんけん＆あっち向いてホイ) is an arcade game originally developed by <strong>Data East</strong>.</p>
-    <p>This is a non-commercial preservation for archival and historical purposes. For official releases, visit <a href="https://archive.org/details/arcade_acchi" target="_blank">archive.org</a></p>
-    <p>Emulation provided by MAME through the Internet Archive.</p>
+  <div class="hub-header">
+    <h1><span>Janken Lopez Hub</span></h1>
+    <p>A free collection of classic arcade games, preserved and playable right in your browser.</p>
+  </div>
+
+  <button class="mute-btn" id="mute-btn" title="Toggle music">&#x1F50A;</button>
+
+  <div class="games-grid">
+    <!-- Game 1 -->
+    <a class="game-card" href="games/janken.html" data-game>
+      <div class="thumb">&#127918;</div>
+      <div class="info">
+        <h2>Janken Game Acchi Muite Hoi</h2>
+        <p class="subtitle">&copy; Data East Corporation &bull; Arcade</p>
+        <span class="tag">MAME</span>
+      </div>
+    </a>
+
+    <!-- More games will be added here -->
+  </div>
+
+  <div class="hub-footer">
+    <p>All games belong to their respective owners. This hub is non-commercial and for preservation purposes only.</p>
+    <p>Emulation provided by <a href="https://www.mame.net/" target="_blank">MAME</a> through the <a href="https://archive.org/" target="_blank">Internet Archive</a>.</p>
   </div>
 
   <script>
-    const btn = document.getElementById('fs-btn');
-    const wrapper = document.getElementById('wrapper');
-    const iframe = document.getElementById('game');
-    const W = 640, H = 480;
+    // ── Perspective grid background ──────────────────────
+    (function () {
+      var c = document.getElementById('grid-canvas');
+      var ctx = c.getContext('2d');
+      var w, h;
 
-    function applyScale(sw, sh) {
-      const scale = Math.min(sw / W, sh / H);
-      const offsetX = (sw - W * scale) / 2;
-      const offsetY = (sh - H * scale) / 2;
+      function resize() {
+        w = c.width  = window.innerWidth;
+        h = c.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
 
-      wrapper.style.position = 'fixed';
-      wrapper.style.top = '0';
-      wrapper.style.left = '0';
-      wrapper.style.width = sw + 'px';
-      wrapper.style.height = sh + 'px';
-      wrapper.style.display = 'flex';
-      wrapper.style.alignItems = 'center';
-      wrapper.style.justifyContent = 'center';
+      var speed  = 0.4;   // grid scroll speed
+      var offset = 0;
+      var cols   = 28;    // vertical lines
+      var rows   = 20;    // horizontal lines
+      var fov    = 0.45;  // perspective strength (0-1)
 
-      iframe.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-      iframe.style.transformOrigin = 'top left';
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        // Horizon sits at 38% from the top
+        var horizon = h * 0.38;
+        var groundH = h - horizon;
+
+        offset = (offset + speed) % (groundH / rows);
+
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.18)';
+        ctx.lineWidth = 1;
+
+        // ── Horizontal lines (recede with perspective) ──
+        for (var i = 0; i <= rows; i++) {
+          var t = (i / rows) + (offset / groundH);
+          if (t > 1) t -= 1;
+          // Apply perspective: lines closer to horizon are compressed
+          var pY = horizon + Math.pow(t, 1 + fov * 3) * groundH;
+          ctx.beginPath();
+          ctx.moveTo(0, pY);
+          ctx.lineTo(w, pY);
+          ctx.stroke();
+        }
+
+        // ── Vertical lines (converge toward vanishing point) ──
+        var vx = w / 2;  // vanishing point X
+        for (var j = 0; j <= cols; j++) {
+          var xBottom = (j / cols) * w;
+          // Lerp toward center at the horizon
+          var xTop = vx + (xBottom - vx) * 0.08;
+          ctx.beginPath();
+          ctx.moveTo(xTop, horizon);
+          ctx.lineTo(xBottom, h);
+          ctx.stroke();
+        }
+
+        // ── Top grid (subtle, static) ──
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.06)';
+        var topRows = 8;
+        for (var r = 0; r < topRows; r++) {
+          var y = (r / topRows) * horizon;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+        var topCols = 14;
+        for (var tc = 0; tc <= topCols; tc++) {
+          var x = (tc / topCols) * w;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, horizon);
+          ctx.stroke();
+        }
+
+        // Horizon glow line
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, horizon);
+        ctx.lineTo(w, horizon);
+        ctx.stroke();
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── Audio setup ───────────────────────────────────────
+    var bgm = new Audio('sounds/music/BackgroundMusic.mp3');
+    bgm.loop = true;
+    bgm.volume = 0.4;
+
+    var sfxHover   = new Audio('sounds/sfx/Button1.mp3');
+    var sfxConfirm = new Audio('sounds/sfx/Confirm.mp3');
+
+    sfxHover.volume   = 0.3;
+    sfxConfirm.volume = 0.5;
+
+    var muted = false;
+    var bgmStarted = false;
+
+    // BGM starts only after the popup is dismissed (user gesture)
+    function startBgm() {
+      if (bgmStarted || muted) return;
+      bgm.play().catch(function () {});
+      bgmStarted = true;
     }
 
-    function resetScale() {
-      wrapper.style.position = '';
-      wrapper.style.top = '';
-      wrapper.style.left = '';
-      wrapper.style.width = '640px';
-      wrapper.style.height = '480px';
-      wrapper.style.display = '';
-      wrapper.style.alignItems = '';
-      wrapper.style.justifyContent = '';
-      iframe.style.transform = '';
-    }
+    // ── Welcome popup ─────────────────────────────────────
+    var popupOverlay = document.getElementById('popup-overlay');
+    var popupAccept  = document.getElementById('popup-accept');
+    popupAccept.addEventListener('click', function () {
+      sfxConfirm.currentTime = 0;
+      sfxConfirm.play().catch(function () {});
+      popupOverlay.classList.add('hidden');
+      startBgm();
+    });
 
-    btn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        wrapper.requestFullscreen();
+    // Mute toggle
+    var muteBtn = document.getElementById('mute-btn');
+    muteBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      muted = !muted;
+      if (muted) {
+        bgm.pause();
+        muteBtn.textContent = '\uD83D\uDD07';
       } else {
-        document.exitFullscreen();
+        bgm.play().catch(function () {});
+        muteBtn.textContent = '\uD83D\uDD0A';
       }
     });
 
-    document.addEventListener('fullscreenchange', () => {
-      if (document.fullscreenElement) {
-        btn.textContent = '✕';
-        applyScale(window.screen.width, window.screen.height);
-      } else {
-        btn.textContent = '⛶';
-        resetScale();
-      }
-    });
+    // ── SFX on game cards ─────────────────────────────────
+    var cards = document.querySelectorAll('.game-card');
+    cards.forEach(function (card) {
+      card.addEventListener('mouseenter', function () {
+        if (muted) return;
+        sfxHover.currentTime = 0;
+        sfxHover.play().catch(function () {});
+      });
 
-    window.addEventListener('resize', () => {
-      if (document.fullscreenElement) {
-        applyScale(window.innerWidth, window.innerHeight);
-      }
+      // Fade out BGM when launching a game
+      card.addEventListener('click', function () {
+        if (muted) return;
+        sfxConfirm.currentTime = 0;
+        sfxConfirm.play().catch(function () {});
+        // Smooth fade-out over 600ms
+        var vol = bgm.volume;
+        var fade = setInterval(function () {
+          vol -= 0.05;
+          if (vol <= 0) {
+            bgm.volume = 0;
+            bgm.pause();
+            clearInterval(fade);
+          } else {
+            bgm.volume = vol;
+          }
+        }, 40);
+      });
     });
   </script>
 </body>

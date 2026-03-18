@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcade - Acchi (Data East)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .grid-bg canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .header, .wrapper, .footer, .back-link, .controls {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .back-link {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      color: #0969da;
+      text-decoration: none;
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+      z-index: 20;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    .wrapper {
+      position: relative;
+      width: 640px;
+      height: 480px;
+    }
+
+    /* Click-to-play overlay — satisfies browser autoplay policy */
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      background: rgba(0, 0, 0, 0.82);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    .play-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .play-overlay svg {
+      width: 72px;
+      height: 72px;
+      fill: #fff;
+      filter: drop-shadow(0 0 12px rgba(255,255,255,0.35));
+      margin-bottom: 14px;
+    }
+
+    .play-overlay span {
+      color: #fff;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    iframe {
+      display: block;
+      width: 640px;
+      height: 480px;
+      border: none;
+      image-rendering: pixelated;
+      transform-origin: top left;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    button {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: rgba(255,255,255,0.28); }
+
+    .footer {
+      color: #666;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 11px;
+      max-width: 640px;
+    }
+
+    .footer a {
+      color: #0969da;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    :fullscreen,
+    :-webkit-full-screen {
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"><canvas id="grid-canvas"></canvas></div>
+
+  <a class="back-link" href="../">&#8592; Back to Hub</a>
+
+  <div class="header">
+    <h1>Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ)</h1>
+    <p>&copy; Data East Corporation | Preserved by Internet Archive</p>
+  </div>
+
+  <div class="wrapper" id="wrapper">
+    <!-- Overlay forces a user gesture before the iframe loads, which lets the browser allow audio -->
+    <div class="play-overlay" id="play-overlay">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <span>Click to Play</span>
+    </div>
+
+    <!-- iframe src is empty until the user clicks; this is the key audio fix -->
+    <iframe
+      id="game"
+      src="about:blank"
+      allow="autoplay; fullscreen; encrypted-media"
+      allowfullscreen>
+    </iframe>
+    <div class="controls">
+      <button id="fs-btn" title="Fullscreen">&#x26F6;</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>Janken Game Acchi Muite Hoi</strong> (じゃんけん＆あっち向いてホイ) is an arcade game originally developed by <strong>Data East</strong>.</p>
+    <p>This is a non-commercial preservation for archival and historical purposes. For official releases, visit <a href="https://archive.org/details/arcade_acchi" target="_blank">archive.org</a></p>
+    <p>Emulation provided by MAME through the Internet Archive.</p>
+  </div>
+
+  <script>
+    // ── Perspective grid background ──────────────────────
+    (function () {
+      var c = document.getElementById('grid-canvas');
+      var ctx = c.getContext('2d');
+      var w, h;
+
+      function resize() {
+        w = c.width  = window.innerWidth;
+        h = c.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      var speed  = 0.4;
+      var offset = 0;
+      var cols   = 28;
+      var rows   = 20;
+      var fov    = 0.45;
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        var horizon = h * 0.38;
+        var groundH = h - horizon;
+        offset = (offset + speed) % (groundH / rows);
+
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.12)';
+        ctx.lineWidth = 1;
+
+        for (var i = 0; i <= rows; i++) {
+          var t = (i / rows) + (offset / groundH);
+          if (t > 1) t -= 1;
+          var pY = horizon + Math.pow(t, 1 + fov * 3) * groundH;
+          ctx.beginPath();
+          ctx.moveTo(0, pY);
+          ctx.lineTo(w, pY);
+          ctx.stroke();
+        }
+
+        var vx = w / 2;
+        for (var j = 0; j <= cols; j++) {
+          var xBottom = (j / cols) * w;
+          var xTop = vx + (xBottom - vx) * 0.08;
+          ctx.beginPath();
+          ctx.moveTo(xTop, horizon);
+          ctx.lineTo(xBottom, h);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.04)';
+        var topRows = 8;
+        for (var r = 0; r < topRows; r++) {
+          var y = (r / topRows) * horizon;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+        var topCols = 14;
+        for (var tc = 0; tc <= topCols; tc++) {
+          var x = (tc / topCols) * w;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, horizon);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, horizon);
+        ctx.lineTo(w, horizon);
+        ctx.stroke();
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    const overlay = document.getElementById('play-overlay');
+    const iframe  = document.getElementById('game');
+    const btn     = document.getElementById('fs-btn');
+    const wrapper = document.getElementById('wrapper');
+    const GAME_URL = 'https://archive.org/embed/arcade_acchi';
+    const W = 640, H = 480;
+
+    // Load the iframe only after a real user click — this user gesture
+    // satisfies the browser autoplay policy so audio works immediately.
+    overlay.addEventListener('click', function () {
+      iframe.src = GAME_URL;
+      overlay.classList.add('hidden');
+      iframe.focus();
+    });
+
+    function applyScale(sw, sh) {
+      const scale = Math.min(sw / W, sh / H);
+      const offsetX = (sw - W * scale) / 2;
+      const offsetY = (sh - H * scale) / 2;
+
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.width = sw + 'px';
+      wrapper.style.height = sh + 'px';
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.justifyContent = 'center';
+
+      iframe.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + ')';
+      iframe.style.transformOrigin = 'top left';
+    }
+
+    function resetScale() {
+      wrapper.style.position = '';
+      wrapper.style.top = '';
+      wrapper.style.left = '';
+      wrapper.style.width = '640px';
+      wrapper.style.height = '480px';
+      wrapper.style.display = '';
+      wrapper.style.alignItems = '';
+      wrapper.style.justifyContent = '';
+      iframe.style.transform = '';
+    }
+
+    btn.addEventListener('click', function () {
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    document.addEventListener('fullscreenchange', function () {
+      if (document.fullscreenElement) {
+        btn.textContent = '\u2715';
+        applyScale(window.screen.width, window.screen.height);
+      } else {
+        btn.textContent = '\u26F6';
+        resetScale();
+      }
+    });
+
+    window.addEventListener('resize', function () {
+      if (document.fullscreenElement) {
+        applyScale(window.innerWidth, window.innerHeight);
+      }
+    });
+  </script>
+</body>
+</html>

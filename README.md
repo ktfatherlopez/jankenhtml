@@ -1,19 +1,28 @@
-# Acchi (あっち) - Arcade Game Preservation
+# Janken Lopez Hub
 
-## About
-Acchi is a classic arcade game developed by **Data East Corporation**.
+A free, non-commercial collection of classic arcade games playable in the browser via GitHub Pages.
+
+## Games
+
+| Game | Developer | Emulator |
+|------|-----------|----------|
+| Janken Game Acchi Muite Hoi (じゃんけん＆あっち向いてホイ) | Data East Corporation | MAME |
+
+## Structure
+
+```
+index.html          ← Arcade Hub (game list)
+games/
+  janken.html       ← Janken Game Acchi Muite Hoi
+```
 
 ## Credits
-- **Developer:** Data East Corporation
 - **Emulation:** MAME (via Internet Archive)
 - **Preservation:** Internet Archive (archive.org)
 
 ## Disclaimer
-This is a non-commercial preservation for archival and historical purposes. All rights to the game belong to Data East Corporation and their successors.
+This is a non-commercial preservation project for archival and historical purposes. All games belong to their respective owners. No games are hosted here — they are streamed from the Internet Archive.
 
-For official releases and more information, visit:
-- https://archive.org/details/arcade_acchi
+For more information visit:
+- https://archive.org/
 - https://www.mame.net/
-
-## Archival Purpose
-This project is maintained as part of video game preservation efforts to ensure classic arcade games remain accessible to researchers, historians, and enthusiasts.
