@@ -302,7 +302,7 @@
   </div>
 
   <script>
-    // ── Perspective grid background ──────────────────────
+    // ── 3D Perspective checkerboard floor ─────────────
     (function () {
       var c = document.getElementById('grid-canvas');
       var ctx = c.getContext('2d');
@@ -315,74 +315,71 @@
       window.addEventListener('resize', resize);
       resize();
 
-      var speed  = 0.4;   // grid scroll speed
-      var offset = 0;
-      var cols   = 28;    // vertical lines
-      var rows   = 20;    // horizontal lines
-      var fov    = 0.45;  // perspective strength (0-1)
+      var scrollOffset = 0;
+      var speed = 0.006;
+      var tileSize = 1.0;
+      var gridHalf = 14;
 
       function draw() {
         ctx.clearRect(0, 0, w, h);
 
-        // Horizon sits at 38% from the top
-        var horizon = h * 0.38;
-        var groundH = h - horizon;
+        var horizon = h * 0.42;
+        var camHeight = 1.5;
+        var fov = w * 0.8;
 
-        offset = (offset + speed) % (groundH / rows);
+        scrollOffset += speed;
+        if (scrollOffset >= tileSize * 2) scrollOffset -= tileSize * 2;
 
-        ctx.strokeStyle = 'rgba(34, 197, 94, 0.18)';
-        ctx.lineWidth = 1;
+        // Dark gradient above horizon
+        var grad = ctx.createLinearGradient(0, 0, 0, horizon);
+        grad.addColorStop(0, '#000');
+        grad.addColorStop(1, 'rgba(0,20,0,0.6)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, horizon);
 
-        // ── Horizontal lines (recede with perspective) ──
-        for (var i = 0; i <= rows; i++) {
-          var t = (i / rows) + (offset / groundH);
-          if (t > 1) t -= 1;
-          // Apply perspective: lines closer to horizon are compressed
-          var pY = horizon + Math.pow(t, 1 + fov * 3) * groundH;
-          ctx.beginPath();
-          ctx.moveTo(0, pY);
-          ctx.lineTo(w, pY);
-          ctx.stroke();
+        // Draw checkerboard rows from horizon downward
+        for (var sy = Math.floor(horizon); sy < h; sy++) {
+          var screenY = sy - horizon;
+          if (screenY <= 0) continue;
+          var worldZ = (camHeight * fov) / screenY;
+
+          for (var tx = -gridHalf; tx <= gridHalf; tx++) {
+            var worldX = tx * tileSize;
+            var tileZ  = worldZ + scrollOffset;
+
+            var tileCol = ((Math.floor(worldX / tileSize) % 2) + 2) % 2;
+            var tileRow = ((Math.floor(tileZ / tileSize) % 2) + 2) % 2;
+            var isGreen = (tileCol + tileRow) % 2 === 0;
+
+            // Project left and right edges of this tile column
+            var leftX  = w / 2 + (worldX * fov) / worldZ;
+            var rightX = w / 2 + ((worldX + tileSize) * fov) / worldZ;
+
+            if (rightX < 0 || leftX > w) continue;
+
+            // Darken tiles farther from camera
+            var dist = worldZ / (gridHalf * tileSize);
+            var brightness = Math.max(0, 1 - dist * 0.7);
+
+            if (isGreen) {
+              var g = Math.floor(90 * brightness);
+              ctx.fillStyle = 'rgb(0,' + g + ',0)';
+            } else {
+              var v = Math.floor(18 * brightness);
+              ctx.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+            }
+
+            ctx.fillRect(Math.floor(leftX), sy, Math.ceil(rightX - leftX) + 1, 1);
+          }
         }
 
-        // ── Vertical lines (converge toward vanishing point) ──
-        var vx = w / 2;  // vanishing point X
-        for (var j = 0; j <= cols; j++) {
-          var xBottom = (j / cols) * w;
-          // Lerp toward center at the horizon
-          var xTop = vx + (xBottom - vx) * 0.08;
-          ctx.beginPath();
-          ctx.moveTo(xTop, horizon);
-          ctx.lineTo(xBottom, h);
-          ctx.stroke();
-        }
-
-        // ── Top grid (subtle, static) ──
-        ctx.strokeStyle = 'rgba(34, 197, 94, 0.06)';
-        var topRows = 8;
-        for (var r = 0; r < topRows; r++) {
-          var y = (r / topRows) * horizon;
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-          ctx.stroke();
-        }
-        var topCols = 14;
-        for (var tc = 0; tc <= topCols; tc++) {
-          var x = (tc / topCols) * w;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, horizon);
-          ctx.stroke();
-        }
-
-        // Horizon glow line
-        ctx.strokeStyle = 'rgba(34, 197, 94, 0.35)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(0, horizon);
-        ctx.lineTo(w, horizon);
-        ctx.stroke();
+        // Horizon glow
+        var glowGrad = ctx.createLinearGradient(0, horizon - 8, 0, horizon + 8);
+        glowGrad.addColorStop(0, 'rgba(34,197,94,0)');
+        glowGrad.addColorStop(0.5, 'rgba(34,197,94,0.3)');
+        glowGrad.addColorStop(1, 'rgba(34,197,94,0)');
+        ctx.fillStyle = glowGrad;
+        ctx.fillRect(0, horizon - 8, w, 16);
 
         requestAnimationFrame(draw);
       }
