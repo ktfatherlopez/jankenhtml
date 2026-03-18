@@ -160,6 +160,78 @@
 
     .hub-footer a:hover { text-decoration: underline; }
 
+    /* ── Inline game view ── */
+    .game-view {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: #000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-view.active {
+      display: flex;
+    }
+
+    .game-view .back-btn {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      z-index: 70;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #22c55e;
+      padding: 6px 14px;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .game-view .back-btn:hover {
+      background: rgba(34, 197, 94, 0.3);
+    }
+
+    .game-view .game-wrapper {
+      position: relative;
+      width: 640px;
+      height: 480px;
+    }
+
+    .game-view iframe {
+      display: block;
+      width: 640px;
+      height: 480px;
+      border: none;
+      image-rendering: pixelated;
+      transform-origin: top left;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .game-view .fs-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 4px;
+      transition: background 0.15s;
+      z-index: 10;
+    }
+
+    .game-view .fs-btn:hover { background: rgba(255,255,255,0.28); }
+
     /* ── Welcome popup ── */
     .popup-overlay {
       position: fixed;
@@ -284,14 +356,14 @@
 
   <div class="games-grid">
     <!-- Game 1 -->
-    <a class="game-card" href="games/janken.html" data-game>
+    <div class="game-card" data-game-url="https://archive.org/embed/arcade_acchi">
       <div class="thumb">&#127918;</div>
       <div class="info">
         <h2>Janken Game Acchi Muite Hoi</h2>
         <p class="subtitle">&copy; Data East Corporation &bull; Arcade</p>
         <span class="tag">MAME</span>
       </div>
-    </a>
+    </div>
 
     <!-- More games will be added here -->
   </div>
@@ -299,6 +371,15 @@
   <div class="hub-footer">
     <p>All games belong to their respective owners. This hub is non-commercial and for preservation purposes only.</p>
     <p>Emulation provided by <a href="https://www.mame.net/" target="_blank">MAME</a> through the <a href="https://archive.org/" target="_blank">Internet Archive</a>.</p>
+  </div>
+
+  <!-- Inline game view (no page navigation) -->
+  <div class="game-view" id="game-view">
+    <button class="back-btn" id="game-back">&#8592; Back to Hub</button>
+    <div class="game-wrapper" id="game-wrapper">
+      <iframe id="game-iframe" src="about:blank" allowfullscreen></iframe>
+      <button class="fs-btn" id="game-fs">&#x26F6;</button>
+    </div>
   </div>
 
   <script>
@@ -431,33 +512,121 @@
       }
     });
 
-    // ── SFX on game cards ─────────────────────────────────
+    // ── SFX on game cards + inline game loading ─────────
+    var hubContent   = document.querySelectorAll('.hub-header, .games-grid, .hub-footer');
+    var gameView     = document.getElementById('game-view');
+    var gameIframe   = document.getElementById('game-iframe');
+    var gameBack     = document.getElementById('game-back');
+    var gameFs       = document.getElementById('game-fs');
+    var gameWrap     = document.getElementById('game-wrapper');
+    var GW = 640, GH = 480;
+
+    function fadeBgm(targetVol, callback) {
+      var vol = bgm.volume;
+      var step = (targetVol > vol) ? 0.03 : -0.03;
+      var fade = setInterval(function () {
+        vol += step;
+        if ((step < 0 && vol <= targetVol) || (step > 0 && vol >= targetVol)) {
+          bgm.volume = targetVol;
+          if (targetVol === 0) bgm.pause();
+          clearInterval(fade);
+          if (callback) callback();
+        } else {
+          bgm.volume = vol;
+        }
+      }, 30);
+    }
+
+    function openGame(url) {
+      hubContent.forEach(function (el) { el.style.display = 'none'; });
+      gameView.classList.add('active');
+      gameIframe.src = url;
+      if (!muted) fadeBgm(0);
+    }
+
+    function closeGame() {
+      gameIframe.src = 'about:blank';
+      gameView.classList.remove('active');
+      hubContent.forEach(function (el) { el.style.display = ''; });
+      if (!muted && bgmStarted) {
+        bgm.volume = 0;
+        bgm.play().catch(function () {});
+        fadeBgm(0.4);
+      }
+    }
+
+    gameBack.addEventListener('click', function () {
+      sfxConfirm.currentTime = 0;
+      sfxConfirm.play().catch(function () {});
+      closeGame();
+    });
+
     var cards = document.querySelectorAll('.game-card');
     cards.forEach(function (card) {
+      card.style.cursor = 'pointer';
+
       card.addEventListener('mouseenter', function () {
         if (muted) return;
         sfxHover.currentTime = 0;
         sfxHover.play().catch(function () {});
       });
 
-      // Fade out BGM when launching a game
-      card.addEventListener('click', function () {
-        if (muted) return;
-        sfxConfirm.currentTime = 0;
-        sfxConfirm.play().catch(function () {});
-        // Smooth fade-out over 600ms
-        var vol = bgm.volume;
-        var fade = setInterval(function () {
-          vol -= 0.05;
-          if (vol <= 0) {
-            bgm.volume = 0;
-            bgm.pause();
-            clearInterval(fade);
-          } else {
-            bgm.volume = vol;
-          }
-        }, 40);
+      card.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = card.getAttribute('data-game-url');
+        if (!url) return;
+        if (!muted) {
+          sfxConfirm.currentTime = 0;
+          sfxConfirm.play().catch(function () {});
+        }
+        openGame(url);
       });
+    });
+
+    // Fullscreen for inline game
+    function applyGameScale(sw, sh) {
+      var scale = Math.min(sw / GW, sh / GH);
+      var ox = (sw - GW * scale) / 2;
+      var oy = (sh - GH * scale) / 2;
+      gameWrap.style.position = 'fixed';
+      gameWrap.style.top = '0';
+      gameWrap.style.left = '0';
+      gameWrap.style.width = sw + 'px';
+      gameWrap.style.height = sh + 'px';
+      gameIframe.style.transform = 'translate(' + ox + 'px,' + oy + 'px) scale(' + scale + ')';
+    }
+
+    function resetGameScale() {
+      gameWrap.style.position = '';
+      gameWrap.style.top = '';
+      gameWrap.style.left = '';
+      gameWrap.style.width = '640px';
+      gameWrap.style.height = '480px';
+      gameIframe.style.transform = '';
+    }
+
+    gameFs.addEventListener('click', function () {
+      if (!document.fullscreenElement) {
+        gameWrap.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    document.addEventListener('fullscreenchange', function () {
+      if (document.fullscreenElement) {
+        gameFs.textContent = '\u2715';
+        applyGameScale(window.screen.width, window.screen.height);
+      } else {
+        gameFs.textContent = '\u26F6';
+        resetGameScale();
+      }
+    });
+
+    window.addEventListener('resize', function () {
+      if (document.fullscreenElement) {
+        applyGameScale(window.innerWidth, window.innerHeight);
+      }
     });
   </script>
 </body>
