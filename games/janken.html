@@ -15,6 +15,8 @@ All rights to the game belong to their respective owners.
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="frame-src https://archive.org; script-src 'self' 'unsafe-inline'">
+  <meta name="referrer" content="no-referrer-when-downgrade">
   <title>Arcade - Acchi (Data East)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -104,7 +106,11 @@ All rights to the game belong to their respective owners.
   <a class="back-link" href="../">&#8592; Back to Hub</a>
 
   <div class="wrapper" id="wrapper">
-    <iframe id="game" src="https://archive.org/embed/arcade_acchi" allowfullscreen></iframe>
+    <iframe id="game" 
+      src="https://archive.org/embed/arcade_acchi" 
+      allowfullscreen
+      sandbox="allow-same-origin allow-scripts allow-presentation allow-fullscreen">
+    </iframe>
     <button id="fs-btn">&#x26F6;</button>
   </div>
 
