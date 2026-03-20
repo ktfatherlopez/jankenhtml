@@ -1,0 +1,17 @@
+# EmulatorJS data (downloaded by setup)
+data/
+
+# MAME engine binaries (large, downloaded separately)
+engine/*.wasm
+engine/*.js
+engine/*.gz
+!engine/loader.js
+!engine/browserfs.min.js
+
+# ROM files (user-provided)
+roms/*.zip
+roms/*.7z
+
+# OS junk
+Thumbs.db
+.DS_Store

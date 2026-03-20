@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acchi Muite Hoi — The Janken Lopez Arcades</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a12;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .top-bar {
+      width: 100%;
+      padding: 0.8rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .top-bar a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.15s;
+    }
+
+    .top-bar a:hover { color: #ffc832; }
+
+    .top-bar .game-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      color: #ffc832;
+    }
+
+    #canvas-holder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      width: 100%;
+      padding: 1rem;
+    }
+
+    #canvas {
+      background: #000;
+      width: 640px;
+      height: 480px;
+      max-width: 100%;
+      image-rendering: pixelated;
+      cursor: pointer;
+    }
+
+    .controls-info {
+      text-align: center;
+      padding: 1rem;
+      color: #555;
+      font-size: 0.8rem;
+      max-width: 640px;
+    }
+
+    .controls-info kbd {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 0.15rem 0.45rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem;
+      color: #333;
+      font-size: 0.75rem;
+      border-top: 1px solid #1a1a1a;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <a href="../index.html">&larr; Back to Arcades</a>
+    <span class="game-title">Acchi Muite Hoi</span>
+  </div>
+
+  <div id="canvas-holder">
+    <canvas id="canvas" tabindex="1"></canvas>
+  </div>
+
+  <div class="controls-info">
+    <p>
+      <kbd>5</kbd> Insert Coin &nbsp;&middot;&nbsp;
+      <kbd>1</kbd> 1P Start &nbsp;&middot;&nbsp;
+      <kbd>Arrow Keys</kbd> Move &nbsp;&middot;&nbsp;
+      <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd> Buttons
+    </p>
+    <p style="margin-top: 0.5rem; color: #444;">
+      Click the game canvas to start, then use keyboard controls.
+    </p>
+  </div>
+
+  <footer>
+    Data East Corporation &middot; 1995 &mdash; Non-commercial preservation.
+  </footer>
+
+  <!-- BrowserFS only (no Emularity) -->
+  <script src="../engine/browserfs.min.js"></script>
+  <script>
+    // --- Audio unlock on first user gesture ---
+    var _audioCtx;
+    function unlockAudio() {
+      if (!_audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) _audioCtx = new AC();
+      }
+      if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+    }
+    ['click','keydown','touchstart'].forEach(function(evt) {
+      document.addEventListener(evt, unlockAudio, { once: false });
+    });
+
+    // Detect the browser's native sample rate so MAME matches it exactly
+    var _nativeSR = (function() {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) { var c = new AC(); var sr = c.sampleRate; c.close(); return sr; }
+      return 48000;
+    })();
+
+    // --- Status overlay ---
+    var canvas = document.getElementById('canvas');
+    var ctx2d = canvas.getContext('2d');
+    function showStatus(msg) {
+      ctx2d.fillStyle = '#000';
+      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+      ctx2d.fillStyle = '#ffc832';
+      ctx2d.font = '16px monospace';
+      ctx2d.textAlign = 'center';
+      ctx2d.fillText(msg, canvas.width / 2, canvas.height / 2);
+    }
+    showStatus('Loading...');
+
+    // --- Parallel fetch: WASM + ROM ---
+    Promise.all([
+      fetch('../engine/mamedeco_mlc.wasm').then(function(r) {
+        if (!r.ok) throw new Error('WASM fetch failed: ' + r.status);
+        return r.arrayBuffer();
+      }),
+      fetch('../roms/acchi.zip').then(function(r) {
+        if (!r.ok) throw new Error('ROM fetch failed: ' + r.status);
+        return r.arrayBuffer();
+      })
+    ]).then(function(results) {
+      var wasmBuf = results[0];
+      var romBuf  = results[1];
+      showStatus('Setting up filesystem...');
+
+      // --- Build BrowserFS: InMemory with ROM written in ---
+      return new Promise(function(resolve, reject) {
+        BrowserFS.FileSystem.InMemory.Create(function(e, memFS) {
+          if (e) return reject(e);
+          BrowserFS.FileSystem.MountableFileSystem.Create({ '/': memFS }, function(e2, mfs) {
+            if (e2) return reject(e2);
+            BrowserFS.initialize(mfs);
+            // Write the ROM zip via the node-fs API
+            var bfsFs = BrowserFS.BFSRequire('fs');
+            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+            bfsFs.writeFileSync('/acchi.zip', Buffer.from(new Uint8Array(romBuf)));
+            resolve({ wasmBuf: wasmBuf, fs: mfs });
+          });
+        });
+      });
+    }).then(function(data) {
+      showStatus('Click to start!');
+
+      // Wait for user click before launching (browser audio policy)
+      return new Promise(function(resolve) {
+        function go() {
+          canvas.removeEventListener('click', go);
+          document.removeEventListener('keydown', go);
+          unlockAudio();
+          resolve(data);
+        }
+        canvas.addEventListener('click', go);
+        document.addEventListener('keydown', go);
+      });
+    }).then(function(data) {
+      showStatus('Launching MAME...');
+
+      // Patch AudioContext so every instance uses the native sample rate
+      // This prevents MAME's SDL2 from creating a context at a mismatched rate
+      var OrigAC = window.AudioContext || window.webkitAudioContext;
+      if (OrigAC) {
+        window.AudioContext = function(opts) {
+          opts = opts || {};
+          opts.sampleRate = _nativeSR;
+          return new OrigAC(opts);
+        };
+        window.AudioContext.prototype = OrigAC.prototype;
+        if (window.webkitAudioContext) window.webkitAudioContext = window.AudioContext;
+      }
+
+      // --- Configure Module before loading MAME JS ---
+      window.Module = {
+        canvas: canvas,
+        arguments: [
+          'acchi',
+          '-verbose',
+          '-rompath', 'emulator',
+          '-window',
+          '-nokeepaspect',
+          '-resolution', '640x480',
+          '-samplerate', String(_nativeSR)
+        ],
+        noInitialRun: false,
+        screenIsReadOnly: true,
+        wasmBinary: data.wasmBuf,
+        locateFile: function(filename) {
+          return '../engine/' + filename;
+        },
+        print: function(t) { console.log('[MAME] ' + t); },
+        printErr: function(t) { console.warn('[MAME] ' + t); },
+        preInit: function() {
+          // Mount BrowserFS into Emscripten's virtual FS
+          BrowserFS.initialize(data.fs);
+          var BFS = new BrowserFS.EmscriptenFS();
+          FS.mkdir('/emulator');
+          FS.mount(BFS, { root: '/' }, '/emulator');
+        },
+        preRun: [function() {
+          console.log('[MAME] preRun — filesystem ready');
+        }]
+      };
+
+      // Load the MAME JS (picks up window.Module)
+      var script = document.createElement('script');
+      script.src = '../engine/mamedeco_mlc.js';
+      script.onerror = function() { showStatus('Failed to load MAME engine!'); };
+      document.head.appendChild(script);
+    }).catch(function(err) {
+      showStatus('Error: ' + err.message);
+      console.error(err);
+    });
+
+    // --- Keep SDL2 AudioContext alive & patch rate ---
+    var _audioFixInterval = setInterval(function() {
+      try {
+        if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+        if (typeof Module !== 'undefined' && Module.SDL2 && Module.SDL2.audioContext) {
+          var sdlCtx = Module.SDL2.audioContext;
+          if (sdlCtx.state === 'suspended') sdlCtx.resume();
+          if (sdlCtx.state === 'running') clearInterval(_audioFixInterval);
+        }
+      } catch(e) {}
+    }, 500);
+  </script>
+
+</body>
+</html>
