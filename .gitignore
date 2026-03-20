@@ -15,3 +15,6 @@ roms/*.7z
 # OS junk
 Thumbs.db
 .DS_Store
+
+# Build output (self-contained HTML, very large)
+dist/
