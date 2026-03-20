@@ -297,8 +297,13 @@ setInterval(function(){
 <!-- Embedded ROMs (base64) -->
 <script>window.__ROM_B64={${opts.romChunks.map(function(r){ return '"'+r.name+'":"'+r.b64+'"'; }).join(',')}};</script>
 
+${(opts.externalScripts||[]).map(function(s){ return '<script src="'+s+'"></script>'; }).join('\n')}
+
 <!-- All data loaded — trigger decode -->
-<script>window.__onDataReady();</script>
+<script>
+if(window._R){for(var _k in window._R){window.__ROM_B64[_k]=window._R[_k].join('');}delete window._R;}
+window.__onDataReady();
+</script>
 
 <!-- MAME JS stored inert (not executed until needed) -->
 <script id="__mame_js" type="text/plain">
@@ -334,7 +339,19 @@ console.log(`  => dist/acchi.html (${(fs.statSync(path.join(DIST, 'acchi.html'))
 
 // ---------- Build Metal Slug 3 ----------
 
-console.log('Building Metal Slug 3...');
+console.log('Building Metal Slug 3 (split build — ROM in companion JS files)...');
+// Split large mslug3.zip into 2 JS chunks (each under 100 MB for GitHub)
+const mslug3B64 = b64('roms/mslug3.zip');
+const splitAt = Math.ceil(mslug3B64.length / 2 / 4) * 4; // align to base64 boundary
+
+fs.writeFileSync(path.join(DIST, 'mslug3_r1.js'),
+  'window._R=window._R||{};window._R["mslug3.zip"]=["' + mslug3B64.substring(0, splitAt) + '"];');
+console.log(`  => dist/mslug3_r1.js (${(fs.statSync(path.join(DIST, 'mslug3_r1.js')).size / 1048576).toFixed(1)} MB)`);
+
+fs.writeFileSync(path.join(DIST, 'mslug3_r2.js'),
+  'window._R["mslug3.zip"].push("' + mslug3B64.substring(splitAt) + '");');
+console.log(`  => dist/mslug3_r2.js (${(fs.statSync(path.join(DIST, 'mslug3_r2.js')).size / 1048576).toFixed(1)} MB)`);
+
 const mslug3HTML = gameShell({
   title: 'Metal Slug 3',
   gameTitle: 'Metal Slug 3',
@@ -349,9 +366,9 @@ const mslug3HTML = gameShell({
   mameJS: readText('engine/mameneogeo.js'),
   wasmB64: b64('engine/mameneogeo.wasm'),
   romChunks: [
-    { name: 'mslug3.zip', b64: b64('roms/mslug3.zip') },
     { name: 'neogeo.zip', b64: b64('roms/neogeo.zip') }
-  ]
+  ],
+  externalScripts: ['mslug3_r1.js', 'mslug3_r2.js']
 });
 fs.writeFileSync(path.join(DIST, 'mslug3.html'), mslug3HTML);
 console.log(`  => dist/mslug3.html (${(fs.statSync(path.join(DIST, 'mslug3.html')).size / 1048576).toFixed(1)} MB)`);
