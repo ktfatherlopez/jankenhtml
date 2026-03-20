@@ -260,13 +260,22 @@ function launchMAME(canvas, wasmBuf, mfs, showStatus) {
     preRun: [function() { console.log('[MAME] preRun — filesystem ready'); }]
   };
 
+  // Block ALL network requests so Securly/web filters have nothing to intercept
+  var _origFetch = window.fetch;
+  window.fetch = function(url) {
+    console.warn('[blocked fetch] ' + url);
+    return Promise.reject(new Error('Network disabled — all assets are embedded'));
+  };
+  var _origXHROpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url) {
+    console.warn('[blocked XHR] ' + method + ' ' + url);
+    throw new Error('Network disabled — all assets are embedded');
+  };
+
+  // Execute MAME JS inline (no blob: URL, no network request)
   var mameText = document.getElementById('__mame_js').textContent;
-  var blob = new Blob([mameText], {type: 'application/javascript'});
-  var url = URL.createObjectURL(blob);
   var s = document.createElement('script');
-  s.src = url;
-  s.onload = function() { URL.revokeObjectURL(url); };
-  s.onerror = function() { showStatus('Failed to launch MAME engine!'); };
+  s.text = mameText;
   document.head.appendChild(s);
 }
 
@@ -414,7 +423,7 @@ footer a:hover{color:#ffc832}
   </div>
 </section>
 <footer>
-  <p>Emulation powered by <a href="https://www.mame.net/" target="_blank" rel="noopener">MAME 0.232</a></p>
+  <p>Emulation powered by MAME 0.232</p>
   <p style="margin-top:.5rem">Non-commercial preservation project. All games belong to their respective owners.</p>
 </footer>
 </body>
