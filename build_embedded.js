@@ -42,7 +42,45 @@ function gameShell(opts) {
 <title>${opts.title} — The Janken Lopez Arcades</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a12;color:#e0e0e0;font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+body{background:#0a0a12;color:#e0e0e0;font-family:monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+/* ====== LOADING OVERLAY (shows immediately) ====== */
+#load-overlay{
+  position:fixed;inset:0;z-index:9999;background:#0a0a12;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .6s;
+}
+#load-overlay.hidden{opacity:0;pointer-events:none}
+#load-overlay h1{
+  font-size:clamp(1rem,3.5vw,1.8rem);color:#ffc832;text-transform:uppercase;
+  text-shadow:0 0 12px rgba(255,200,50,.6);letter-spacing:.08em;margin-bottom:2rem;text-align:center;padding:0 1rem;
+}
+#load-overlay .sub{font-size:.8rem;color:#666;margin-bottom:2.5rem}
+#load-bar-wrap{
+  width:min(400px,80vw);height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;position:relative;
+}
+#load-bar{
+  height:100%;width:0%;background:linear-gradient(90deg,#ffc832,#ff8800);border-radius:3px;
+  transition:width .3s ease;
+}
+#load-status{margin-top:1.2rem;font-size:.75rem;color:#555;text-align:center;min-height:1.2em}
+#load-pct{margin-top:.5rem;font-size:1.5rem;color:#ffc832;font-weight:bold}
+
+/* Pulsing dots animation */
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.dots span{animation:pulse 1.4s infinite;font-size:1.2rem;color:#ffc832}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+
+/* Scanline effect on overlay */
+#load-overlay::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);
+}
+
+/* ====== GAME UI (hidden until ready) ====== */
+#game-ui{display:none;flex-direction:column;align-items:center;width:100%;flex:1}
+#game-ui.active{display:flex}
 .top-bar{width:100%;padding:.8rem 1.2rem;display:flex;align-items:center;gap:1rem;border-bottom:1px solid #1a1a1a}
 .top-bar a{color:#888;text-decoration:none;font-size:.85rem;transition:color .15s}
 .top-bar a:hover{color:#ffc832}
@@ -52,32 +90,76 @@ body{background:#0a0a12;color:#e0e0e0;font-family:'Inter',sans-serif;min-height:
 .controls-info{text-align:center;padding:1rem;color:#555;font-size:.8rem;max-width:640px}
 .controls-info kbd{background:#1a1a2e;border:1px solid #333;border-radius:4px;padding:.15rem .45rem;font-family:sans-serif;font-size:.75rem;color:#999}
 footer{text-align:center;padding:1.5rem 1rem;color:#333;font-size:.75rem;border-top:1px solid #1a1a1a;width:100%}
-#progress{position:fixed;top:0;left:0;height:3px;background:#ffc832;transition:width .2s;z-index:999}
 </style>
 </head>
 <body>
-<div id="progress" style="width:0%"></div>
-<div class="top-bar">
-  <a href="index.html">&larr; Back to Arcades</a>
-  <span class="game-title">${opts.gameTitle}</span>
+
+<!-- ====== LOADING OVERLAY (renders before anything else downloads) ====== -->
+<div id="load-overlay">
+  <h1>${opts.gameTitle}</h1>
+  <div class="sub">The Janken Lopez Arcades</div>
+  <div id="load-bar-wrap"><div id="load-bar"></div></div>
+  <div id="load-pct">0%</div>
+  <div id="load-status">Downloading game data<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
 </div>
-<div id="canvas-holder">
-  <canvas id="canvas" tabindex="1"></canvas>
+
+<!-- ====== GAME UI (hidden until loaded) ====== -->
+<div id="game-ui">
+  <div class="top-bar">
+    <a href="index.html">&larr; Back to Arcades</a>
+    <span class="game-title">${opts.gameTitle}</span>
+  </div>
+  <div id="canvas-holder">
+    <canvas id="canvas" tabindex="1"></canvas>
+  </div>
+  <div class="controls-info">
+    ${opts.controlsHtml}
+    <p style="margin-top:.5rem;color:#444">Click the game canvas to start, then use keyboard controls.</p>
+  </div>
+  <footer>${opts.footerHtml}</footer>
 </div>
-<div class="controls-info">
-  ${opts.controlsHtml}
-  <p style="margin-top:.5rem;color:#444">Click the game canvas to start, then use keyboard controls.</p>
-</div>
-<footer>${opts.footerHtml}</footer>
+
+<script>
+// Loading screen controller — runs immediately
+var _loadBar = document.getElementById('load-bar');
+var _loadPct = document.getElementById('load-pct');
+var _loadStatus = document.getElementById('load-status');
+var _loadOverlay = document.getElementById('load-overlay');
+
+// Fake progress during download (the real progress comes from the browser
+// streaming the HTML — we can't measure it, so we animate toward ~85%)
+var _fakeProgress = 0;
+var _fakeTarget = 85;
+var _fakeTimer = setInterval(function() {
+  // Fast at first, slows as it approaches target (ease-out feel)
+  _fakeProgress += (_fakeTarget - _fakeProgress) * 0.03;
+  setLoadProgress(Math.round(_fakeProgress));
+}, 200);
+
+function setLoadProgress(pct) {
+  _loadBar.style.width = pct + '%';
+  _loadPct.textContent = pct + '%';
+}
+function setLoadStatus(msg) {
+  _loadStatus.textContent = msg;
+}
+function hideOverlay() {
+  clearInterval(_fakeTimer);
+  setLoadProgress(100);
+  setLoadStatus('Ready!');
+  setTimeout(function() {
+    _loadOverlay.classList.add('hidden');
+    document.getElementById('game-ui').classList.add('active');
+    setTimeout(function() { _loadOverlay.remove(); }, 700);
+  }, 400);
+}
+</script>
 
 <!-- BrowserFS inlined -->
 <script>${opts.browserfsJS}</script>
 
 <script>
 // --- helpers ---
-var pbar = document.getElementById('progress');
-function setProgress(pct) { pbar.style.width = pct + '%'; }
-
 function b64toArrayBuffer(b64) {
   var bin = atob(b64), len = bin.length, u8 = new Uint8Array(len);
   for (var i = 0; i < len; i++) u8[i] = bin.charCodeAt(i);
@@ -94,61 +176,64 @@ function unlockAudio() {
 
 var _nativeSR = (function(){ var AC = window.AudioContext||window.webkitAudioContext; if(AC){var c=new AC();var sr=c.sampleRate;c.close();return sr;} return 48000; })();
 
-// --- canvas status ---
-var canvas = document.getElementById('canvas');
-var ctx2d = canvas.getContext('2d');
-function showStatus(msg) {
-  ctx2d.fillStyle='#000'; ctx2d.fillRect(0,0,canvas.width,canvas.height);
-  ctx2d.fillStyle='#ffc832'; ctx2d.font='16px monospace'; ctx2d.textAlign='center';
-  ctx2d.fillText(msg, canvas.width/2, canvas.height/2);
-}
+// This runs once all the heavy script tags below are parsed
+window.__onDataReady = function() {
+  setLoadStatus('Decoding engine...');
+  setLoadProgress(88);
 
-showStatus('Decoding assets...');
-setProgress(10);
+  setTimeout(function() {
+    var wasmBuf = b64toArrayBuffer(window.__WASM_B64);
+    delete window.__WASM_B64;
+    setLoadProgress(92);
 
-// --- decode embedded assets (async to avoid blocking UI) ---
-setTimeout(function() {
-  var wasmBuf = b64toArrayBuffer(window.__WASM_B64);
-  delete window.__WASM_B64; // free memory
-  setProgress(40);
+    setLoadStatus('Decoding ROMs...');
+    var roms = {};
+    for (var name in window.__ROM_B64) {
+      roms[name] = b64toArrayBuffer(window.__ROM_B64[name]);
+    }
+    delete window.__ROM_B64;
+    setLoadProgress(95);
 
-  showStatus('Decoding ROMs...');
-  var roms = {};
-  for (var name in window.__ROM_B64) {
-    roms[name] = b64toArrayBuffer(window.__ROM_B64[name]);
-  }
-  delete window.__ROM_B64;
-  setProgress(60);
+    setLoadStatus('Setting up filesystem...');
+    BrowserFS.FileSystem.InMemory.Create(function(e, memFS) {
+      BrowserFS.FileSystem.MountableFileSystem.Create({'/': memFS}, function(e2, mfs) {
+        BrowserFS.initialize(mfs);
+        var bfsFs = BrowserFS.BFSRequire('fs');
+        var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+        for (var rn in roms) {
+          bfsFs.writeFileSync('/' + rn, Buffer.from(new Uint8Array(roms[rn])));
+        }
+        roms = null;
+        setLoadProgress(98);
 
-  showStatus('Setting up filesystem...');
-  BrowserFS.FileSystem.InMemory.Create(function(e, memFS) {
-    BrowserFS.FileSystem.MountableFileSystem.Create({'/': memFS}, function(e2, mfs) {
-      BrowserFS.initialize(mfs);
-      var bfsFs = BrowserFS.BFSRequire('fs');
-      var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-      for (var rn in roms) {
-        bfsFs.writeFileSync('/' + rn, Buffer.from(new Uint8Array(roms[rn])));
-      }
-      roms = null; // free
-      setProgress(70);
+        // Transition to game UI
+        hideOverlay();
 
-      showStatus('Click to start!');
+        var canvas = document.getElementById('canvas');
+        var ctx2d = canvas.getContext('2d');
+        function showStatus(msg) {
+          ctx2d.fillStyle='#000'; ctx2d.fillRect(0,0,canvas.width,canvas.height);
+          ctx2d.fillStyle='#ffc832'; ctx2d.font='16px monospace'; ctx2d.textAlign='center';
+          ctx2d.fillText(msg, canvas.width/2, canvas.height/2);
+        }
 
-      function go() {
-        canvas.removeEventListener('click', go);
-        document.removeEventListener('keydown', go);
-        unlockAudio();
-        launch(wasmBuf, mfs);
-      }
-      canvas.addEventListener('click', go);
-      document.addEventListener('keydown', go);
+        showStatus('Click to start!');
+
+        function go() {
+          canvas.removeEventListener('click', go);
+          document.removeEventListener('keydown', go);
+          unlockAudio();
+          launchMAME(canvas, wasmBuf, mfs, showStatus);
+        }
+        canvas.addEventListener('click', go);
+        document.addEventListener('keydown', go);
+      });
     });
-  });
-}, 50);
+  }, 50);
+};
 
-function launch(wasmBuf, mfs) {
+function launchMAME(canvas, wasmBuf, mfs, showStatus) {
   showStatus('Launching MAME...');
-  setProgress(80);
 
   var OrigAC = window.AudioContext || window.webkitAudioContext;
   if (OrigAC) {
@@ -163,7 +248,7 @@ function launch(wasmBuf, mfs) {
     noInitialRun: false,
     screenIsReadOnly: true,
     wasmBinary: wasmBuf,
-    locateFile: function(f) { return f; /* won't be called since wasmBinary is provided */ },
+    locateFile: function(f) { return f; },
     print: function(t){ console.log('[MAME] '+t); },
     printErr: function(t){ console.warn('[MAME] '+t); },
     preInit: function() {
@@ -172,24 +257,15 @@ function launch(wasmBuf, mfs) {
       FS.mkdir('/emulator');
       FS.mount(BFS, {root:'/'}, '/emulator');
     },
-    preRun: [function() {
-      setProgress(90);
-      console.log('[MAME] preRun — filesystem ready');
-    }]
+    preRun: [function() { console.log('[MAME] preRun — filesystem ready'); }]
   };
 
-  // Execute the MAME JS from the inert script tag via blob URL
-  setProgress(95);
   var mameText = document.getElementById('__mame_js').textContent;
   var blob = new Blob([mameText], {type: 'application/javascript'});
   var url = URL.createObjectURL(blob);
   var s = document.createElement('script');
   s.src = url;
-  s.onload = function() {
-    URL.revokeObjectURL(url);
-    setProgress(100);
-    setTimeout(function(){ pbar.style.display='none'; }, 1000);
-  };
+  s.onload = function() { URL.revokeObjectURL(url); };
   s.onerror = function() { showStatus('Failed to launch MAME engine!'); };
   document.head.appendChild(s);
 }
@@ -211,6 +287,9 @@ setInterval(function(){
 
 <!-- Embedded ROMs (base64) -->
 <script>window.__ROM_B64={${opts.romChunks.map(function(r){ return '"'+r.name+'":"'+r.b64+'"'; }).join(',')}};</script>
+
+<!-- All data loaded — trigger decode -->
+<script>window.__onDataReady();</script>
 
 <!-- MAME JS stored inert (not executed until needed) -->
 <script id="__mame_js" type="text/plain">
