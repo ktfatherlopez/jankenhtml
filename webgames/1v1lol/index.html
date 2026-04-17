@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>1v1.lol | The Janken Lopez Arcades</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b1220;
+      color: #d8e6ff;
+      font-family: Segoe UI, Tahoma, sans-serif;
+    }
+
+    #gameContainer {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at center, #172542 0%, #0b1220 62%);
+      z-index: 10;
+    }
+
+    #loaderCard {
+      width: min(420px, 86vw);
+      padding: 1rem 1.1rem;
+      border: 1px solid #2f476a;
+      border-radius: 10px;
+      background: rgba(13, 22, 39, 0.95);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    #loader h1 {
+      margin: 0 0 0.65rem;
+      font-size: 1.02rem;
+      color: #8fc2ff;
+    }
+
+    #loader p {
+      margin: 0.35rem 0;
+      color: #a7b7d2;
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    #progressWrap {
+      margin-top: 0.8rem;
+      height: 10px;
+      border: 1px solid #2e4468;
+      border-radius: 999px;
+      background: #0f1d37;
+      overflow: hidden;
+    }
+
+    #progress {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #63beff, #9ee4ff);
+      transform-origin: left center;
+      transition: width 0.14s linear;
+    }
+
+    #status {
+      margin-top: 0.6rem;
+      color: #7f95b5;
+      font-size: 0.8rem;
+      min-height: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer"></div>
+
+  <div id="loader">
+    <div id="loaderCard">
+      <h1>1v1.lol</h1>
+      <p>Loading local Unity build...</p>
+      <div id="progressWrap"><div id="progress"></div></div>
+      <div id="status">Starting loader...</div>
+    </div>
+  </div>
+
+  <script>
+    // Build path options:
+    // 1) ?json=Build/WebGL.json
+    // 2) window.__GAME_JSON_URL set by parent
+    // 3) default Build/WebGL.json
+    var params = new URLSearchParams(window.location.search);
+    var gameJsonUrl = params.get('json') || window.__GAME_JSON_URL || 'Build/WebGL.json';
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    function setProgress(v) {
+      document.getElementById('progress').style.width = Math.round(v * 100) + '%';
+    }
+
+    function fail(msg) {
+      setStatus(msg);
+      console.error(msg);
+    }
+
+    // Preserve behavior from your reference page, but without ad/analytics dependencies.
+    var lockedOccured = false;
+    var gameInstance = null;
+    document.addEventListener('pointerlockchange', function() {
+      if (!lockedOccured && document.pointerLockElement) lockedOccured = true;
+      if (!document.pointerLockElement && lockedOccured && gameInstance && gameInstance.SendMessage) {
+        lockedOccured = false;
+        try { gameInstance.SendMessage('Pause Menu', 'OnCursorUnlocked'); } catch (e) {}
+      }
+    }, false);
+
+    document.onkeydown = function(e) {
+      if (e.altKey || e.ctrlKey || e.key === 'F1' || e.key === 'F2' || e.key === 'F3' || e.key === 'F4') {
+        e.preventDefault();
+      }
+    };
+
+    var loaderScript = document.createElement('script');
+    loaderScript.src = 'UnityLoader.js';
+    loaderScript.onload = function() {
+      if (typeof UnityLoader === 'undefined') {
+        fail('UnityLoader.js loaded but UnityLoader object is missing.');
+        return;
+      }
+
+      setStatus('Downloading game data...');
+      try {
+        gameInstance = UnityLoader.instantiate('gameContainer', gameJsonUrl, {
+          onProgress: function(inst, progress) {
+            setProgress(progress || 0);
+            if (progress === 1) {
+              setStatus('Ready');
+              var loader = document.getElementById('loader');
+              loader.style.display = 'none';
+            }
+          }
+        });
+      } catch (err) {
+        fail('Failed to initialize Unity build: ' + err.message);
+      }
+    };
+
+    loaderScript.onerror = function() {
+      setStatus('No local build found. Redirecting to live site...');
+      setTimeout(function() { window.location.href = 'https://1v1.lol/'; }, 1500);
+    };
+
+    document.head.appendChild(loaderScript);
+  </script>
+</body>
+</html>

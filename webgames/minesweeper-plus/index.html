@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<title>Minesweeper Plus</title>
+<style>
+html, body { margin: 0; padding: 0; border: 0; width: 100%; height: 100%; overflow: hidden; background: #0a0a12; }
+#canvas { display: block; margin: 0; width: 100%; height: 100%; touch-action: none; }
+#canvas:focus { outline: none; }
+#status {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; font-family: "Segoe UI", sans-serif;
+  color: #e0e0e0;
+}
+#status-progress { width: 320px; height: 6px; background: #1a1a2a; border-radius: 3px; }
+#status-progress-inner { height: 100%; width: 0; background: #ffc832; border-radius: 3px; transition: width .3s linear; }
+#status-notice { margin-top: 1rem; text-align: center; line-height: 1.4; padding: 0.5rem; display: none; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="1">Your browser does not support HTML5 canvas.</canvas>
+<div id="status">
+  <div id="status-progress"><div id="status-progress-inner"></div></div>
+  <div id="status-notice"></div>
+</div>
+<script src="../../engine/godot44/godot.js"></script>
+<script>
+const GODOT_CONFIG = {
+  executable: '../../engine/godot44/godot',
+  mainPack: 'godot.pck',
+  canvasResizePolicy: 2,
+  fileSizes: {},
+  args: [],
+  focusCanvas: true
+};
+const engine = new Engine(GODOT_CONFIG);
+const statusProgressInner = document.getElementById('status-progress-inner');
+const statusNotice = document.getElementById('status-notice');
+
+engine.startGame({
+  onProgress: function(current, total) {
+    if (total > 0) {
+      statusProgressInner.style.width = ((current / total) * 100) + '%';
+    }
+  }
+}).then(function() {
+  document.getElementById('status').style.display = 'none';
+}, function(err) {
+  statusProgressInner.style.width = '0%';
+  statusNotice.style.display = 'block';
+  statusNotice.textContent = err.message || err;
+  console.error(err);
+});
+</script>
+</body>
+</html>

@@ -337,6 +337,54 @@ const acchiHTML = gameShell({
 fs.writeFileSync(path.join(DIST, 'acchi.html'), acchiHTML);
 console.log(`  => dist/acchi.html (${(fs.statSync(path.join(DIST, 'acchi.html')).size / 1048576).toFixed(1)} MB)`);
 
+// ---------- Build Metal Slug 1 ----------
+
+console.log('Building Metal Slug 1...');
+const mslug1HTML = gameShell({
+  title: 'Metal Slug 1',
+  gameTitle: 'Metal Slug 1',
+  publisher: 'SNK',
+  year: '1996',
+  canvasW: 640, canvasH: 448,
+  controlsHtml: '<p><kbd>5</kbd> Insert Coin &middot; <kbd>1</kbd> 1P Start &middot; <kbd>Arrow Keys</kbd> Move &middot; <kbd>Ctrl</kbd> Shoot &middot; <kbd>Alt</kbd> Jump &middot; <kbd>Space</kbd> Grenade</p>',
+  footerHtml: 'SNK Corporation &middot; 1996 &mdash; Non-commercial preservation.',
+  driver: 'mslug',
+  resolution: '640x448',
+  browserfsJS: readText('engine/browserfs.min.js'),
+  mameJS: readText('engine/mameneogeo.js'),
+  wasmB64: b64('engine/mameneogeo.wasm'),
+  romChunks: [
+    { name: 'mslug.zip', b64: b64('roms/mslug.zip') },
+    { name: 'neogeo.zip', b64: b64('roms/neogeo.zip') }
+  ]
+});
+fs.writeFileSync(path.join(DIST, 'mslug1.html'), mslug1HTML);
+console.log(`  => dist/mslug1.html (${(fs.statSync(path.join(DIST, 'mslug1.html')).size / 1048576).toFixed(1)} MB)`);
+
+// ---------- Build Metal Slug 2 ----------
+
+console.log('Building Metal Slug 2...');
+const mslug2HTML = gameShell({
+  title: 'Metal Slug 2',
+  gameTitle: 'Metal Slug 2',
+  publisher: 'SNK',
+  year: '1998',
+  canvasW: 640, canvasH: 448,
+  controlsHtml: '<p><kbd>5</kbd> Insert Coin &middot; <kbd>1</kbd> 1P Start &middot; <kbd>Arrow Keys</kbd> Move &middot; <kbd>Ctrl</kbd> Shoot &middot; <kbd>Alt</kbd> Jump &middot; <kbd>Space</kbd> Grenade</p>',
+  footerHtml: 'SNK Corporation &middot; 1998 &mdash; Non-commercial preservation.',
+  driver: 'mslug2',
+  resolution: '640x448',
+  browserfsJS: readText('engine/browserfs.min.js'),
+  mameJS: readText('engine/mameneogeo.js'),
+  wasmB64: b64('engine/mameneogeo.wasm'),
+  romChunks: [
+    { name: 'mslug2.zip', b64: b64('roms/mslug2.zip') },
+    { name: 'neogeo.zip', b64: b64('roms/neogeo.zip') }
+  ]
+});
+fs.writeFileSync(path.join(DIST, 'mslug2.html'), mslug2HTML);
+console.log(`  => dist/mslug2.html (${(fs.statSync(path.join(DIST, 'mslug2.html')).size / 1048576).toFixed(1)} MB)`);
+
 // ---------- Build Metal Slug 3 ----------
 
 console.log('Building Metal Slug 3 (split build — ROM in companion JS files)...');
@@ -376,75 +424,13 @@ console.log(`  => dist/mslug3.html (${(fs.statSync(path.join(DIST, 'mslug3.html'
 // ---------- Build hub index ----------
 
 console.log('Building hub index...');
-const indexHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Janken Lopez Arcades</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a12;color:#e0e0e0;font-family:'Inter',sans-serif;min-height:100vh;position:relative;overflow-x:hidden}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:100}
-header{text-align:center;padding:3rem 1rem 2rem}
-.title{font-family:monospace;font-size:clamp(1.2rem,4vw,2.4rem);text-transform:uppercase;letter-spacing:.05em;color:#fff;text-shadow:0 0 10px rgba(255,200,50,.8),0 0 30px rgba(255,200,50,.4),0 0 60px rgba(255,150,0,.2);line-height:1.4}
-.subtitle{margin-top:1rem;font-size:.95rem;color:#888;font-style:italic}
-.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;max-width:1000px;margin:2rem auto;padding:0 1.5rem 3rem}
-.game-card{background:#14141f;border:1px solid #222;border-radius:12px;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;display:flex;flex-direction:column}
-.game-card:hover{transform:translateY(-4px);border-color:#ffc832;box-shadow:0 8px 30px rgba(255,200,50,.15)}
-.game-thumb{width:100%;aspect-ratio:4/3;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#ffc832;border-bottom:1px solid #222;position:relative;overflow:hidden}
-.game-thumb .crt-glow{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,200,50,.06) 0%,transparent 70%)}
-.game-info{padding:1rem 1.2rem;flex:1;display:flex;flex-direction:column}
-.game-name{font-family:monospace;font-size:.75rem;color:#fff;line-height:1.6}
-.game-meta{margin-top:.4rem;font-size:.8rem;color:#666}
-.game-meta span{display:inline-block;margin-right:.8rem}
-.play-btn{display:inline-block;margin-top:auto;padding-top:1rem}
-.play-btn a{display:inline-block;background:#ffc832;color:#0a0a12;font-family:monospace;font-size:.65rem;padding:.6rem 1.4rem;border-radius:6px;text-decoration:none;transition:background .15s,transform .1s;letter-spacing:.05em}
-.play-btn a:hover{background:#ffe066;transform:scale(1.04)}
-.play-btn a:active{transform:scale(.97)}
-.badge{display:inline-block;font-size:.6rem;padding:.2rem .5rem;border-radius:4px;vertical-align:middle;margin-left:.5rem;font-weight:600}
-.badge-mame{background:rgba(255,200,50,.15);color:#ffc832;border:1px solid rgba(255,200,50,.3)}
-footer{text-align:center;padding:2rem 1rem;color:#444;font-size:.8rem;border-top:1px solid #1a1a1a}
-footer a{color:#666;text-decoration:none}
-footer a:hover{color:#ffc832}
-</style>
-</head>
-<body>
-<header>
-  <h1 class="title">The Janken Lopez<br>Arcades</h1>
-  <p class="subtitle">Free classic arcade preservation &mdash; playable in your browser</p>
-</header>
-<section class="game-grid">
-  <div class="game-card">
-    <div class="game-thumb"><div class="crt-glow"></div>&#127918;</div>
-    <div class="game-info">
-      <div class="game-name">Acchi Muite Hoi <span class="badge badge-mame">MAME</span></div>
-      <div class="game-meta"><span>Data East &middot; 1995</span></div>
-      <div class="play-btn"><a href="acchi.html">PLAY</a></div>
-    </div>
-  </div>
-  <div class="game-card">
-    <div class="game-thumb"><div class="crt-glow"></div>&#128163;</div>
-    <div class="game-info">
-      <div class="game-name">Metal Slug 3 <span class="badge badge-mame">MAME</span></div>
-      <div class="game-meta"><span>SNK &middot; 2000</span></div>
-      <div class="play-btn"><a href="mslug3.html">PLAY</a></div>
-    </div>
-  </div>
-  <div class="game-card" style="opacity:.35;pointer-events:none">
-    <div class="game-thumb" style="color:#333">&#10067;</div>
-    <div class="game-info">
-      <div class="game-name" style="color:#555">More games soon&hellip;</div>
-      <div class="game-meta"><span>Stay tuned</span></div>
-    </div>
-  </div>
-</section>
-<footer>
-  <p>Emulation powered by MAME 0.232</p>
-  <p style="margin-top:.5rem">Non-commercial preservation project. All games belong to their respective owners.</p>
-</footer>
-</body>
-</html>`;
+const indexHTML = readText('index.html')
+  .replace(/href="games\/acchi\.html"/g, 'href="acchi.html"')
+  .replace(/href="games\/mslug1\.html"/g, 'href="mslug1.html"')
+  .replace(/href="games\/mslug2\.html"/g, 'href="mslug2.html"')
+  .replace(/href="games\/mslug3\.html"/g, 'href="mslug3.html"')
+  .replace(/href="games\//g, 'href="../games/')
+  .replace(/src="assets\//g, 'src="../assets/');
 fs.writeFileSync(path.join(DIST, 'index.html'), indexHTML);
 console.log(`  => dist/index.html`);
 

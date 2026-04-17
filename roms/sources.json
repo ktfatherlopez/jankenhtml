@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "id": "mslug1_rom",
+      "title": "Metal Slug 1 ROM Archive",
+      "targetPath": "roms/mslug1.zip",
+      "url": "https://example.com/path/to/mslug1.zip",
+      "licenseProof": "Purchased arcade board + self-dumped for archival",
+      "sourceAttribution": "SNK / Nazca",
+      "copyrightHolder": "SNK Corporation",
+      "sha256": "REPLACE_WITH_KNOWN_SHA256"
+    },
+    {
+      "id": "mslug2_rom",
+      "title": "Metal Slug 2 ROM Archive",
+      "targetPath": "roms/mslug2.zip",
+      "url": "https://example.com/path/to/mslug2.zip",
+      "licenseProof": "Licensed archival copy",
+      "sourceAttribution": "SNK / Nazca",
+      "copyrightHolder": "SNK Corporation",
+      "sha256": "REPLACE_WITH_KNOWN_SHA256"
+    },
+    {
+      "id": "unity_1v1lol_webbuild",
+      "title": "1v1.lol Unity Web Build",
+      "targetPath": "webgames/1v1lol/index.html",
+      "url": "https://example.com/path/to/1v1lol/index.html",
+      "licenseProof": "Permission from rightsholder",
+      "sourceAttribution": "Original 1v1.lol creators",
+      "copyrightHolder": "Respective owner",
+      "sha256": "OPTIONAL_FOR_HTML"
+    },
+    {
+      "id": "minesweeper_plus_godot_build",
+      "title": "Minesweeper Plus Godot Build",
+      "targetPath": "webgames/minesweeper-plus/index.html",
+      "url": "https://example.com/path/to/minesweeper-plus/index.html",
+      "licenseProof": "Author permission / allowed redistribution",
+      "sourceAttribution": "Game author",
+      "copyrightHolder": "Respective owner",
+      "sha256": "OPTIONAL_FOR_HTML"
+    },
+    {
+      "id": "uncanny_cat_golfing_build",
+      "title": "Uncanny Cat Golfing Build",
+      "targetPath": "webgames/uncanny-cat-golfing/index.html",
+      "url": "https://example.com/path/to/uncanny-cat-golfing/index.html",
+      "licenseProof": "Author permission / allowed redistribution",
+      "sourceAttribution": "SH2K",
+      "copyrightHolder": "Respective owner",
+      "sha256": "OPTIONAL_FOR_HTML"
+    }
+  ]
+}

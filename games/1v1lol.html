@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1v1.lol - The Janken Lopez Arcades</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a12; color: #e0e0e0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+    .top { padding: 0.9rem 1.2rem; border-bottom: 1px solid #1a1a1a; }
+    .top a { color: #ffc832; text-decoration: none; font-weight: 600; }
+    .wrap { max-width: 1180px; width: 100%; margin: 1rem auto; padding: 0 1rem 1.4rem; flex: 1; display: flex; flex-direction: column; gap: 0.8rem; }
+    h1 { font-family: Consolas, "Courier New", monospace; font-size: 1.2rem; color: #ffc832; }
+    .info { color: #8f8f98; font-size: 0.9rem; }
+    .slot { background: #0f0f19; border: 1px solid #212130; border-radius: 12px; overflow: hidden; min-height: 70vh; }
+    iframe { width: 100%; height: 70vh; border: 0; display: block; background: #000; }
+    .hint { margin-top: 0.5rem; color: #6f6f7a; font-size: 0.85rem; }
+    .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .btn {
+      display: inline-block; background: #ffc832; color: #0a0a12; text-decoration: none;
+      font-weight: 700; border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.82rem;
+    }
+    code { background: #161626; border: 1px solid #23233a; border-radius: 4px; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <div class="top"><a href="../index.html">&larr; Back to Arcades</a></div>
+  <div class="wrap">
+    <h1>1v1.lol</h1>
+    <p class="info">Online multiplayer building &amp; shooting game by JustPlay.LOL &mdash; embedded from the official site. Requires internet.</p>
+    <div class="slot">
+      <iframe id="game-frame" src="https://1v1.lol/" title="1v1.lol" allow="autoplay; fullscreen; pointer-lock; gamepad; accelerometer; gyroscope" referrerpolicy="no-referrer"></iframe>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://1v1.lol/" target="_blank" rel="noopener">Open in New Tab</a>
+    </div>
+    <p class="hint">This game streams from <strong>1v1.lol</strong> and requires internet. If the embed doesn't load, use the button above to open in a new tab.</p>
+  </div>
+</body>
+</html>
