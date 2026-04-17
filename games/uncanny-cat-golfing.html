@@ -12,8 +12,9 @@
     .wrap { max-width: 1180px; width: 100%; margin: 1rem auto; padding: 0 1rem 1.4rem; flex: 1; display: flex; flex-direction: column; gap: 0.8rem; }
     h1 { font-family: Consolas, "Courier New", monospace; font-size: 1.2rem; color: #ffc832; }
     .info { color: #8f8f98; font-size: 0.9rem; }
-    .slot { background: #0f0f19; border: 1px solid #212130; border-radius: 12px; overflow: hidden; position: relative; min-height: 70vh; }
-    #canvas { display: block; width: 100%; height: 70vh; touch-action: none; }
+    .slot { background: #0f0f19; border: 1px solid #212130; border-radius: 12px; overflow: hidden; position: relative; width: 100%; aspect-ratio: 4 / 3; max-height: 80vh; }
+    .slot:fullscreen, .slot:-webkit-full-screen { border-radius: 0; max-height: none; aspect-ratio: auto; width: 100vw; height: 100vh; }
+    #canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     #canvas:focus { outline: none; }
     #status {
       position: absolute; inset: 0; display: flex; flex-direction: column;
@@ -23,6 +24,9 @@
     #status-progress-inner { height: 100%; width: 0; background: #ffc832; border-radius: 3px; transition: width .3s linear; }
     #status-notice { margin-top: 1rem; text-align: center; line-height: 1.4; padding: 0.5rem; display: none; color: #e06060; }
     .hint { margin-top: 0.5rem; color: #6f6f7a; font-size: 0.85rem; }
+    .game-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .btn-fs { display: inline-flex; align-items: center; gap: 0.35rem; background: #ffc832; color: #0a0a12; font-weight: 700; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.82rem; cursor: pointer; }
+    .btn-fs:hover { background: #e6b52e; }
   </style>
 </head>
 <body>
@@ -37,6 +41,7 @@
         <div id="status-notice"></div>
       </div>
     </div>
+    <div class="game-actions"><button class="btn-fs" onclick="var s=document.querySelector('.slot');if(document.fullscreenElement)document.exitFullscreen();else s.requestFullscreen();">&#x26F6; Fullscreen</button></div>
     <p class="hint">Click the game area to capture input. Press Esc to release pointer lock.</p>
   </div>
   <script src="../engine/godot421/godot.js"></script>
@@ -60,27 +65,28 @@
     const missing = Engine.getMissingFeatures();
     if (missing.length !== 0) {
       statusNotice.style.display = 'block';
-      statusNotice.textContent = 'Missing features: ' + missing.join(', ') + '. This game requires Cross-Origin Isolation headers for threading support.';
-    } else {
-      // Manual load: separate HTTP URL from virtual FS path
-      const packUrl = '../webgames/uncanny-cat-golfing/godot.pck';
-      const packFs = 'godot.pck';
-      engine.config.args = ['--main-pack', packFs].concat(engine.config.args);
-
-      Promise.all([
-        engine.init('../engine/godot421/godot'),
-        engine.preloadFile(packUrl, packFs),
-      ]).then(function () {
-        return engine.start();
-      }).then(function () {
-        document.getElementById('status').style.display = 'none';
-      }, function (err) {
-        statusProgressInner.style.width = '0%';
-        statusNotice.style.display = 'block';
-        statusNotice.textContent = err.message || err;
-        console.error(err);
-      });
+      statusNotice.style.color = '#e6b52e';
+      statusNotice.textContent = 'Warning: ' + missing.join(', ') + '. The game may not work correctly.';
     }
+    // Always attempt to load regardless of missing features
+    const packUrl = '../webgames/uncanny-cat-golfing/godot.pck';
+    const packFs = 'godot.pck';
+    engine.config.args = ['--main-pack', packFs].concat(engine.config.args);
+
+    Promise.all([
+      engine.init('../engine/godot421/godot'),
+      engine.preloadFile(packUrl, packFs),
+    ]).then(function () {
+      return engine.start();
+    }).then(function () {
+      document.getElementById('status').style.display = 'none';
+    }, function (err) {
+      statusProgressInner.style.width = '0%';
+      statusNotice.style.display = 'block';
+      statusNotice.style.color = '#e06060';
+      statusNotice.textContent = err.message || err;
+      console.error(err);
+    });
   </script>
 </body>
 </html>

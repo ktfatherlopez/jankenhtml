@@ -50,16 +50,27 @@
       flex: 1;
       width: 100%;
       padding: 1rem;
+      position: relative;
     }
+
+    #canvas-holder:fullscreen, #canvas-holder:-webkit-full-screen { background: #000; padding: 0; }
+    #canvas-holder:fullscreen #canvas, #canvas-holder:-webkit-full-screen #canvas { max-width: none; max-height: 100vh; width: auto; height: 100vh; }
 
     #canvas {
       background: #000;
-      width: 640px;
-      height: 480px;
-      max-width: 100%;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4 / 3;
+      max-height: 70vh;
       image-rendering: pixelated;
       cursor: pointer;
     }
+
+    .game-actions {
+      display: flex; justify-content: center; gap: 0.6rem; padding: 0 1rem;
+    }
+    .btn-fs { display: inline-flex; align-items: center; gap: 0.35rem; background: #ffc832; color: #0a0a12; font-weight: 700; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-fs:hover { background: #e6b52e; }
 
     .controls-info {
       text-align: center;
@@ -99,6 +110,8 @@
   <div id="canvas-holder">
     <canvas id="canvas" tabindex="1"></canvas>
   </div>
+
+  <div class="game-actions"><button class="btn-fs" onclick="var h=document.getElementById('canvas-holder');if(document.fullscreenElement)document.exitFullscreen();else h.requestFullscreen();">&#x26F6; Fullscreen</button></div>
 
   <div class="controls-info">
     <p>
