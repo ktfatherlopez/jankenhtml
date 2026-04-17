@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><title>Diagnostics</title></head>
+<body style="background:#0a0a12;color:#e0e0e0;font-family:monospace;padding:2rem;">
+<h2>Browser Feature Check</h2>
+<pre id="out"></pre>
+<script>
+var o = document.getElementById('out');
+var lines = [
+  'isSecureContext: ' + window.isSecureContext,
+  'crossOriginIsolated: ' + window.crossOriginIsolated,
+  'SharedArrayBuffer: ' + ('SharedArrayBuffer' in window),
+  'WebGL2: ' + (function(){ try { return !!document.createElement('canvas').getContext('webgl2'); } catch(e){ return false; } })(),
+  'location.protocol: ' + location.protocol,
+  'location.hostname: ' + location.hostname,
+];
+o.textContent = lines.join('\n');
+</script>
+</body>
+</html>

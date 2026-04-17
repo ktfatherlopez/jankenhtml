@@ -65,6 +65,8 @@
     const statusNotice = document.getElementById('status-notice');
 
     const missing = Engine.getMissingFeatures();
+    console.log('[UCG] getMissingFeatures:', JSON.stringify(missing));
+    console.log('[UCG] crossOriginIsolated:', window.crossOriginIsolated, 'SharedArrayBuffer:', 'SharedArrayBuffer' in window, 'WebGL2:', !!document.createElement('canvas').getContext('webgl2'));
     const hasWebGL2 = !missing.some(function(m) { return m.indexOf('WebGL2') !== -1; });
     const hasSecure = !missing.some(function(m) { return m.indexOf('Secure Context') !== -1; });
     const hasCOI = !missing.some(function(m) { return m.indexOf('Cross Origin') !== -1; });
