@@ -22,7 +22,9 @@
     }
     #status-progress { width: 320px; height: 6px; background: #1a1a2a; border-radius: 3px; }
     #status-progress-inner { height: 100%; width: 0; background: #ffc832; border-radius: 3px; transition: width .3s linear; }
-    #status-notice { margin-top: 1rem; text-align: center; line-height: 1.4; padding: 0.5rem; display: none; color: #e06060; }
+    #status-notice { margin-top: 1rem; text-align: center; line-height: 1.6; padding: 0.5rem 1rem; display: none; color: #e06060; font-size: 0.9rem; max-width: 480px; }
+    #status-notice strong { color: #ffc832; }
+    #status-notice code { background: #161626; border: 1px solid #23233a; border-radius: 4px; padding: 0.1rem 0.3rem; color: #e0e0e0; font-size: 0.85rem; }
     .hint { margin-top: 0.5rem; color: #6f6f7a; font-size: 0.85rem; }
     .game-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
     .btn-fs { display: inline-flex; align-items: center; gap: 0.35rem; background: #ffc832; color: #0a0a12; font-weight: 700; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.82rem; cursor: pointer; }
@@ -63,30 +65,40 @@
     const statusNotice = document.getElementById('status-notice');
 
     const missing = Engine.getMissingFeatures();
-    if (missing.length !== 0) {
-      statusNotice.style.display = 'block';
-      statusNotice.style.color = '#e6b52e';
-      statusNotice.textContent = 'Warning: ' + missing.join(', ') + '. The game may not work correctly.';
-    }
-    // Always attempt to load regardless of missing features
-    const packUrl = '../webgames/uncanny-cat-golfing/godot.pck';
-    const packFs = 'godot.pck';
-    engine.config.args = ['--main-pack', packFs].concat(engine.config.args);
+    const hasWebGL2 = !missing.some(function(m) { return m.indexOf('WebGL2') !== -1; });
+    const hasSecure = !missing.some(function(m) { return m.indexOf('Secure Context') !== -1; });
+    const hasCOI = !missing.some(function(m) { return m.indexOf('Cross Origin') !== -1; });
+    const hasSAB = !missing.some(function(m) { return m.indexOf('SharedArrayBuffer') !== -1; });
 
-    Promise.all([
-      engine.init('../engine/godot421/godot'),
-      engine.preloadFile(packUrl, packFs),
-    ]).then(function () {
-      return engine.start();
-    }).then(function () {
-      document.getElementById('status').style.display = 'none';
-    }, function (err) {
-      statusProgressInner.style.width = '0%';
+    if (!hasWebGL2 || !hasSAB) {
+      // This threaded build cannot work without SharedArrayBuffer + WebGL2
       statusNotice.style.display = 'block';
-      statusNotice.style.color = '#e06060';
-      statusNotice.textContent = err.message || err;
-      console.error(err);
-    });
+      var msg = '<strong>This game cannot start.</strong><br>';
+      if (!hasSecure) msg += '&bull; Open via <code>http://localhost:3000</code> (not a LAN/network IP)<br>';
+      if (!hasCOI) msg += '&bull; Cross-Origin Isolation headers missing &mdash; use the included dev server<br>';
+      if (!hasSAB) msg += '&bull; SharedArrayBuffer not available (requires secure context + correct headers)<br>';
+      if (!hasWebGL2) msg += '&bull; WebGL2 not detected &mdash; enable <strong>hardware acceleration</strong> in your browser settings<br>';
+      statusNotice.innerHTML = msg;
+    } else {
+      // All critical features present — load the game
+      const packUrl = '../webgames/uncanny-cat-golfing/godot.pck';
+      const packFs = 'godot.pck';
+      engine.config.args = ['--main-pack', packFs].concat(engine.config.args);
+
+      Promise.all([
+        engine.init('../engine/godot421/godot'),
+        engine.preloadFile(packUrl, packFs),
+      ]).then(function () {
+        return engine.start();
+      }).then(function () {
+        document.getElementById('status').style.display = 'none';
+      }, function (err) {
+        statusProgressInner.style.width = '0%';
+        statusNotice.style.display = 'block';
+        statusNotice.textContent = err.message || err;
+        console.error(err);
+      });
+    }
   </script>
 </body>
 </html>

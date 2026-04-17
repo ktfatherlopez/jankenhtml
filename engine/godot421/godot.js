@@ -8965,7 +8965,8 @@ var GodotAudioWorklet = {
  ring_buffer: null,
  create: function(channels) {
   const path = GodotConfig.locate_file("godot.audio.worklet.js");
-  GodotAudioWorklet.promise = GodotAudio.ctx.audioWorklet.addModule(path).then(function() {
+  GodotAudioWorklet.promise = (GodotAudio.ctx.audioWorklet ? GodotAudio.ctx.audioWorklet.addModule(path) : Promise.resolve()).then(function() {
+   if (!GodotAudio.ctx.audioWorklet) return Promise.resolve();
    GodotAudioWorklet.worklet = new AudioWorkletNode(GodotAudio.ctx, "godot-processor", {
     "outputChannelCount": [ channels ]
    });
